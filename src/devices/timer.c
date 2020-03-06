@@ -187,11 +187,17 @@ timer_interrupt (struct intr_frame *args UNUSED)
   ticks++;
   thread_tick ();
   if(!list_empty(&sleep_list)){
-	struct thread * a = list_entry ( list_front(&sleep_list) , struct thread, telem);
-	if(a->toExpire <= ticks){
-		a->toExpire = 0;
-		thread_unblock(a);
-		list_pop_front(&sleep_list);
+	for (struct list_elem * e = list_begin(&sleep_list); e != list_end(&sleep_list); e = list_next(e)){
+		struct thread * a = list_entry ( e , struct thread, telem);
+	
+		if(a->toExpire <= ticks){
+			a->toExpire = 0;
+			thread_unblock(a);
+			list_pop_front(&sleep_list);
+		}
+		else{
+			break;
+		}
 	}
   }
 }
