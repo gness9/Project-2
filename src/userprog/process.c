@@ -18,6 +18,7 @@
 #include "threads/thread.h"
 #include "threads/vaddr.h"
 
+
 static thread_func start_process NO_RETURN;
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
 
@@ -30,16 +31,20 @@ process_execute (const char *file_name)
 {
   char *fn_copy;
   tid_t tid;
-
-  /* Make a copy of FILE_NAME.
-     Otherwise there's a race between the caller and load(). */
-  fn_copy = palloc_get_page (0);
+printf("AAAAAAAAAAAAAAAAAAA");
+   fn_copy = palloc_get_page (0);
   if (fn_copy == NULL)
     return TID_ERROR;
   strlcpy (fn_copy, file_name, PGSIZE);
-
+  
+  char *token,*save_ptr,*program;
+  program = malloc(strlen(file_name)+1);
+  strlcpy (program, file_name, strlen(file_name)+1);
+  program = strtok_r (file_name, " ", &save_ptr);
+  
   /* Create a new thread to execute FILE_NAME. */
-  tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
+  tid = thread_create (program, PRI_DEFAULT, start_process, fn_copy);
+  //free(program);
   if (tid == TID_ERROR)
     palloc_free_page (fn_copy); 
   return tid;
@@ -49,7 +54,8 @@ process_execute (const char *file_name)
    running. */
 static void
 start_process (void *file_name_)
-{
+{printf("VBBBBBBBBBBBBBBBBBBBBB");
+	printf("\nStart: %s\n",file_name_);
   char *file_name = file_name_;
   struct intr_frame if_;
   bool success;
@@ -195,7 +201,7 @@ struct Elf32_Phdr
 #define PF_W 2          /* Writable. */
 #define PF_R 4          /* Readable. */
 
-static bool setup_stack (void **esp);
+static bool setup_stack (const char *file_name, void **esp);
 static bool validate_segment (const struct Elf32_Phdr *, struct file *);
 static bool load_segment (struct file *file, off_t ofs, uint8_t *upage,
                           uint32_t read_bytes, uint32_t zero_bytes,
@@ -208,6 +214,7 @@ static bool load_segment (struct file *file, off_t ofs, uint8_t *upage,
 bool
 load (const char *file_name, void (**eip) (void), void **esp) 
 {
+printf("\nLOAD: %s\n",file_name);
   struct thread *t = thread_current ();
   struct Elf32_Ehdr ehdr;
   struct file *file = NULL;
@@ -220,9 +227,20 @@ load (const char *file_name, void (**eip) (void), void **esp)
   if (t->pagedir == NULL) 
     goto done;
   process_activate ();
-
+	
+  /*char *save_ptr;
+  char *fname;
+  fname = strtok_r(fname, " ", &save_ptr);*/
+	
+  char *fname = malloc(strlen(file_name)+1);
+  strlcpy(fname, file_name, strlen(file_name)+1);
+  char *save_ptr;
+  fname = strtok_r(fname, " ", &save_ptr);
+	
   /* Open executable file. */
-  file = filesys_open (file_name);
+  printf("\nSOMETHING %s\n",fname);
+  file = filesys_open (fname);
+  //free(fname);
   if (file == NULL) 
     {
       printf ("load: %s: open failed\n", file_name);
@@ -302,7 +320,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
     }
 
   /* Set up stack. */
-  if (!setup_stack (esp))
+  if (!setup_stack (file_name, esp))
     goto done;
 
   /* Start address. */
@@ -427,11 +445,13 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
 /* Create a minimal stack by mapping a zeroed page at the top of
    user virtual memory. */
 static bool
-setup_stack (void **esp) 
+setup_stack (const char * file_name, void **esp) 
 {
+  printf("DDDDDDDDDDDDDDDDDDd");
   uint8_t *kpage;
   bool success = false;
-
+  char *save_ptr;
+  char *fname;
   kpage = palloc_get_page (PAL_USER | PAL_ZERO);
   if (kpage != NULL) 
     {
@@ -441,6 +461,53 @@ setup_stack (void **esp)
       else
         palloc_free_page (kpage);
     }
+  char *token;
+  int argc = 0,i;
+  char *temp = malloc(strlen(file_name)+1);
+  strlcpy(temp, file_name, strlen(file_name)+1);
+  for(token = strtok_r (temp, " ", &save_ptr); token != NULL; token = strtok_r(NULL, " ", &save_ptr)){
+	  argc++;
+  }
+  int *argv = calloc(argc, sizeof(int));
+  for (token = strtok_r(file_name, " ", &save_ptr), i = 0; token != NULL; token = strtok_r(NULL, " ", &save_ptr), i++){
+	  *esp -=strlen(token)+1;
+	  memcpy(*esp, token, strlen(token) + 1);
+	  argv[i]=*esp;
+  }
+  for(int k = 0; k < argc; k++){
+	  printf("\nARGV: %d - %s\n",k,argv[k]);
+  }
+	while((int)*esp%4!=0)
+  {
+    *esp-=sizeof(char);
+    char x = 0;
+    memcpy(*esp,&x,sizeof(char));
+  }
+
+  int zero = 0;
+
+  *esp-=sizeof(int);
+  memcpy(*esp,&zero,sizeof(int));
+
+  for(i=argc-1;i>=0;i--)
+  {
+    *esp-=sizeof(int);
+    memcpy(*esp,&argv[i],sizeof(int));
+  }
+
+  int pt = *esp;
+  *esp-=sizeof(int);
+  memcpy(*esp,&pt,sizeof(int));
+
+  *esp-=sizeof(int);
+  memcpy(*esp,&argc,sizeof(int));
+
+  *esp-=sizeof(int);
+  memcpy(*esp,&zero,sizeof(int));
+
+  free(temp);
+  free(argv);
+
   return success;
 }
 
