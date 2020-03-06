@@ -1,0 +1,178 @@
+
+CIS 520 - Programming Project #1
+
+                   
+---- GROUP ----
+
+>> Fill in the names and email addresses of your group members.
+
+Glenn Ness <gness9@ksu.edu>
+Zayin Brunson <zaybrunson@ksu.edu>
+Aaron Sampson <amsimpso@ksu.edu>
+
+---- PRELIMINARIES ----
+
+>> If you have any preliminary comments on your submission, notes for
+>> the TA, or extra credit, please give them here.
+
+>> Please cite any offline or online sources you consulted while
+>> preparing your submission, other than the Pintos documentation,
+>> course text, lecture notes, and course staff.
+
+
+                 ALARM CLOCK
+                 ===========
+
+---- DATA STRUCTURES ----
+
+>> A1: Copy here the declaration of each new or changed `struct' or
+>> `struct' member, global or static variable, `typedef', or
+>> enumeration.  Identify the purpose of each in 25 words or less.
+
+	*threads/thread.h: struct list_elem telem
+		- List element used so we can add an element to every thread
+	*threads/thread.h: long toExpire
+		- long variable to keep track of how much time the thread has until it has advanced by at least t_ticks timer ticks
+	*devices/timer.c: static struct list sleep_list
+		- linked list utilized to keep track of any sleeping threads
+
+
+---- ALGORITHMS ----
+
+>> A2: Briefly describe what happens in a call to your timer_sleep(),
+>> including the effects of the timer interrupt handler.
+- When timer_sleep() is called, the current threads toExpire is initialized to the amount of ticks until it should wake up on.
+Interrupts are then disabled so the thread can be blocked after it is added to the list of sleeping threads.
+Afterwards the interrupts are enabled again.
+- timer_interrupt() checks the first value in the sorted list of sleeping threads and checks to if
+the list has passed enough time in toExpire to be unblocked. If it is we unblock the thread, reset the
+toExpire value, and pop the thread off the sleeping threads list.
+
+>> A3: What steps are taken to minimize the amount of time spent in
+>> the timer interrupt handler?
+-The timer_interrupt() handler will check to see if there are any sleeping threads before even calling the first thread in the list.
+The handler will also make sure to see if the toExpire value is less then or equal to the current tick before proceeding with unblocking the thread.
+
+
+
+---- SYNCHRONIZATION ----
+
+>> A4: How are race conditions avoided when multiple threads call
+>> timer_sleep() simultaneously?
+- By disabling the interrupts before proceeding with the thread blocking we can ensure that
+only one thread will be blocked at a time avoiding race conditions when entering the critical section.
+
+
+>> A5: How are race conditions avoided when a timer interrupt occurs
+>> during a call to timer_sleep()?
+- By installing an if check to make sure that the toExpire long is less then or equal to the current tick
+we can ensure that the thread will wak up eventually even if it misses the exact tick to wake up on.
+
+
+---- RATIONALE ----
+
+>> A6: Why did you choose this design?  In what ways is it superior to
+>> other designs that you considered?
+- Another option we could have considered was using a semaphore to also avoid race conditions. We decided on using interrupts
+to avoid not having a structured layout for our program losing modularity. We also chose a linked list to keep track
+of the sleeping threads because it is easy to add additional threads and keep track of the top thread to pop off.
+
+
+
+             PRIORITY SCHEDULING
+             ===================
+
+---- DATA STRUCTURES ----
+
+>> B1: Copy here the declaration of each new or changed `struct' or
+>> `struct' member, global or static variable, `typedef', or
+>> enumeration.  Identify the purpose of each in 25 words or less.
+
+   */threads/thread.h: int init_priority
+        - The initial priority of the thread before priority
+            donation. Ensures that priority donation will not
+            decrease a thread's priority.
+   */threads/thread.h: struct list_elem allelem
+        - List element to store all threads
+   */threads/thread.h: void check_current_priority();
+        - Check thhe priority of the current thread. If the thread is not idle
+            and it no longer has the highest priority, yield CPU
+   */
+
+>> B2: Explain the data structure used to track priority donation.
+
+
+---- ALGORITHMS ----
+
+>> B3: How do you ensure that the highest priority thread waiting for
+>> a lock, semaphore, or condition variable wakes up first?
+    - By ordering the ready_list based on a priorty variable, with the greatest first, you can ensure that the highest priority is at the front of the list.
+>> B4: Describe the sequence of events when a call to lock_acquire()
+>> causes a priority donation.  How is nested donation handled?
+    - If low priority (L) has a lock that medium priority (M) wants, then M will give L M's priority so that L will be able to run as the current thread, otherwise M will just sit as the current thread. Nested donation is handled by having each thread containing a list of all locks it is trying to acquire. Looping through this and the Lock->handler will allow us to pass priority from the highest to the lowest and all in between.
+>> B5: Describe the sequence of events when lock_release() is called
+>> on a lock that a higher-priority thread is waiting for.
+    - When lock_release() is called, we made sure that the thread that first requested the lock is at the front of ready_list when we release the lock allowing that thread to get that lock as lock_acquire() only works on the current thread.
+---- SYNCHRONIZATION ----
+
+>> B6: Describe a potential race in thread_set_priority() and explain
+>> how your implementation avoids it.  Can you use a lock to avoid
+>> this race?
+- A possible race condition in thread_set_priority() could occur when we are updating the priority at the
+same time that the interrupt handler updates the priority. This was taken care of in our program by implementing
+an interrupt disable while setting the priority. Interrupt handlers cannot use locks making it not possible to use one to avoid race.
+
+
+---- RATIONALE ----
+
+>> B7: Why did you choose this design?  In what ways is it superior to
+>> another design you considered?
+- We decided to use this design because we found it the simplest way to keep track of all the priorities and locks.
+It could have been possible to create more fields in our threads to store more occasionally used variables but found it would be superior
+to use only the necessary variables in order to reduce needless complexity.
+
+
+              ADVANCED SCHEDULER [EXTRA CREDIT]
+              =================================
+
+---- DATA STRUCTURES ----
+
+>> C1: Copy here the declaration of each new or changed `struct' or
+>> `struct' member, global or static variable, `typedef', or
+>> enumeration.  Identify the purpose of each in 25 words or less.
+
+---- ALGORITHMS ----
+
+>> C2: Suppose threads A, B, and C have nice values 0, 1, and 2.  Each
+>> has a recent_cpu value of 0.  Fill in the table below showing the
+>> scheduling decision and the priority and recent_cpu values for each
+>> thread after each given number of timer ticks:
+
+timer  recent_cpu    priority   thread
+ticks   A   B   C   A   B   C   to run
+-----  --  --  --  --  --  --   ------
+ 0
+ 4
+ 8
+12
+16
+20
+24
+28
+32
+36
+
+>> C3: Did any ambiguities in the scheduler specification make values
+>> in the table uncertain?  If so, what rule did you use to resolve
+>> them?  Does this match the behavior of your scheduler?
+
+>> C4: How is the way you divided the cost of scheduling between code
+>> inside and outside interrupt context likely to affect performance?
+
+---- RATIONALE ----
+
+>> C5: Briefly critique your design, pointing out advantages and
+>> disadvantages in your design choices.  If you were to have extra
+>> time to work on this part of the project, how might you choose to
+>> refine or improve your design?
+
