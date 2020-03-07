@@ -43,32 +43,26 @@ syscall_handler (struct intr_frame *f UNUSED)
 
 /*Returns  the  position  of  the  next  byte  to  be  read  or  written  in  open  file fd,  
 expressed  in  bytes  from  the beginning of the file. */
-/* unsigned
+unsigned
 tell (int fd)
 {
-	struct list_elem * el;
 	
 	if(list_empty(&thread_current()->filedes_list)) {
 		return -1;
 	}
 	
-	el = list_front(&thread_current()->filedes_list);
+	struct entry_file *ef = obtain_file(fd);
 	
-	while (el != NULL) {
-		struct entry_file *f = list_entry (el, struct entry_file, element_file);
-		if(fd == f->des_file)
-		{
-			unsigned position ;
-			list_remove(&f->element_file);
-			return -1;
-		}
-		el = el->next;
+	if(ef->file != NULL)
+	{
+		unsigned pos = (unsigned) file_tell(f);
+		return pos;
 	}
 	
 	return -1;
 	
 	
-} */
+} 
 
 
 
@@ -79,6 +73,7 @@ void
 close (int fd)
 { 
 	/*lock_acquire(&locking_file);*/
+	acquire_filesys_lock();
 	
 	if(list_empty(&thread_current()->filedes_list)) {
 		/*lock_release(&locking_file);*/
@@ -93,6 +88,8 @@ close (int fd)
 		list_remove(&ef->element_file);
 		return;
 	}
+	
+	release_filesys_lock();
 	
 	return;
 
