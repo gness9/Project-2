@@ -16,12 +16,6 @@
 
 static void syscall_handler (struct intr_frame *);
 struct entry_file * obtain_file(int fd);
-struct process_file
-{
-	int descriptor;
-	struct file* ptr;
-	struct list_elem fd_list_elem;
-};
 
 /* lock makes sure that file system accesss only has one process at a time */
 /*struct lock locking_file;*/
@@ -133,13 +127,13 @@ int open(const char *file)
 		// Release lock
 		return -1;
 	}
-	struct process_file* processFile = malloc(sizeof(*processFile));
-	processFile->ptr = file;
-	processFile->descriptor = thread_current()->file_descriptors;
+	struct entry_file* processFile = malloc(sizeof(*processFile));
+	processFile->addr_file = file;
+	processFile->des_file = thread_current()->file_descriptors;
 	thread_current()->file_descriptors++;
-	list_push_front(&thread_current()->filedes_list, &processFile->fd_list_elem);
+	list_push_front(&thread_current()->filedes_list, &processFile->element_file);
 	/* Release all locks here */
-	return processFile->descriptor;
+	return processFile->des_file;
 }
 
 int filesize (int fd) 
