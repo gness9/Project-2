@@ -94,6 +94,7 @@ start_process (void *file_name_)
 int
 process_wait (tid_t child_tid UNUSED) 
 {
+  //sema_down(&thread_current()->sema);
   return -1;
 }
 
@@ -507,6 +508,7 @@ setup_stack (const char * file_name, void **esp)
 
   free(temp);
   free(argv);
+	hex_dump((uintptr_t)*esp, *esp, sizeof(char) * 8, true);
 
   return success;
 }
