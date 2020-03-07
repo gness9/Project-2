@@ -49,7 +49,7 @@ void halt (void)
 
 void exit(int status) 
 {
-	thread_current()->exit_status = status;
+	thread_current()->status_exit = status;
 	printf("%s: exit(%d)\n", thread_current()->name, status);
 	thread_exit ();
 }
