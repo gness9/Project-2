@@ -55,9 +55,9 @@ close (int fd)
 	
 	el = list_front(&thread_current()->filedes_list);
 	
-	while (el) {
+	while (el != NULL) {
 		struct entry_file *f = list_entry (el, struct entry_file, element_file);
-		if(fd == f->filedes_list)
+		if(fd == f->des_file)
 		{
 			file_close(f->addr_file);
 			list_remove(&f->element_file);
