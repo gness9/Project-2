@@ -96,7 +96,8 @@ struct thread
     struct list_elem elem;              /* List element. */
 	
 	struct list filedes_list;
-	
+   int file_descriptors;
+
 	int status_exit;
 
 #ifdef USERPROG

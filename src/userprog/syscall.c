@@ -12,9 +12,16 @@
 #include "devices/input.h"
 #include "filesys/file.h"
 #include "filesys/filesys.h"
+#include "kernel/list.h"
 
 static void syscall_handler (struct intr_frame *);
 struct entry_file * obtain_file(int fd);
+struct process_file
+{
+	int descriptor;
+	struct file* ptr;
+	struct list_elem fd_list_elem;
+};
 
 /* lock makes sure that file system accesss only has one process at a time */
 /*struct lock locking_file;*/
@@ -117,12 +124,23 @@ bool remove (const char *file)
 }
 
 
-/* int open(const char *file) 
+int open(const char *file) 
 {
-	
-	
-	
-} */
+	/* Semaphore/lock should go here */
+	struct file* openedFile = filesys_open(file);
+	if (openedFile == NULL)
+	{
+		// Release lock
+		return -1;
+	}
+	struct process_file* processFile = malloc(sizeof(*processFile));
+	processFile->ptr = file;
+	processFile->descriptor = thread_current()->file_descriptors;
+	thread_current()->file_descriptors++;
+	list_push_front(&thread_current()->filedes_list, &processFile->fd_list_elem);
+	/* Release all locks here */
+	return processFile->descriptor;
+}
 
 int filesize (int fd) 
 {
