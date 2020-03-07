@@ -15,6 +15,7 @@
 
 static void syscall_handler (struct intr_frame *);
 struct entry_file * obtain_file(int fd);
+void obtain_arguments(const void *vaddr);
 
 /* lock makes sure that file system accesss only has one process at a time */
 /*struct lock locking_file;*/
@@ -36,8 +37,56 @@ syscall_init (void)
 static void
 syscall_handler (struct intr_frame *f UNUSED) 
 {
-  printf ("system call!\n");
+  if (f->esp == NULL)
+  {
+    exit(-1);
+  }
+  
+  int * args = f->esp;
+  
+  switch(*(int*)f->esp) 
+  {
+    case SYS_HALT:
+	  halt();
+      break;
+    case SYS_EXIT:
+	  obtain_addr(args+1);
+	  exit(*(args+1));
+      break;
+    case SYS_EXEC:
+      break;
+    case SYS_WAIT:
+      break;
+    case SYS_CREATE:
+      break;
+    case SYS_REMOVE:
+      break;
+    case SYS_OPEN:
+      break;
+    case SYS_FILESIZE:
+      break;
+    case SYS_READ:
+      break;
+    case SYS_WRITE:
+      break;
+    case SYS_SEEK:
+      break;
+    case SYS_TELL:
+      break;
+    case SYS_CLOSE:
+      break;	
+  }
   thread_exit ();
+}
+
+void obtain_arguments(const void *vaddr) {
+	void *ptr = pagedir_get_page(thread_current()->pagedir, vaddr);
+	if (!ptr)
+	{
+		exit_proc(-1);
+		return 0;
+	}
+	return ptr;
 }
 
 /*Terminates Pintos by calling shutdown_power_off()*/
