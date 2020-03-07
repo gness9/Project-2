@@ -51,7 +51,7 @@ close (int fd)
 		return;
 	}
 	
-	struct element_list * el;
+	struct list_elem * el;
 	
 	el = list_front(&thread_current()->filedes_list);
 	
