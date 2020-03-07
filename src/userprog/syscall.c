@@ -239,3 +239,22 @@ struct entry_file * obtain_file(int fd) {
 	}
 	return NULL;
 }
+
+void*
+validate_address(void* ptr)
+{
+	/* Validate that the pointer is not unmapped virtual memory. */
+	void* test_ptr = pagedir_get_page(thread_current()->pagedir, ptr);
+	if (!test_ptr) 
+	{
+		exit(-1);
+		return 0;
+	}
+	/* This function checks if the pointer is in user virtual memory space. If not, exit and return null */
+	if (!is_user_vaddr(ptr))
+	{
+		exit(-1);
+		return 0;
+	}
+	return ptr;
+}
