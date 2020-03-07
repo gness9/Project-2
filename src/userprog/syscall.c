@@ -46,14 +46,14 @@ void halt (void)
 	shutdown_power_off();
 }
 
-/*Currently giving large warnings
+/*Currently giving large warnings*/
 void exit(int status) 
 {
 	thread_current()->status_exit = status;
 	printf("%s: exit(%d)\n", thread_current()->name, status);
 	thread_exit ();
 }
-*/
+
 
 pid_t exec (const char * file)
 {
