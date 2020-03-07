@@ -25,6 +25,22 @@ struct entry_file {
 	struct list_elem element_file;
 };
 
+void
+syscall_init (void) 
+{
+  /*lock_init(&locking_file);*/
+	
+  intr_register_int (0x30, 3, INTR_ON, syscall_handler, "syscall");
+}
+
+static void
+syscall_handler (struct intr_frame *f UNUSED) 
+{
+  printf ("system call!\n");
+  thread_exit ();
+}
+
+
 /*Changes  the  next  byte  to  be read  or  written  in  open  file fdto position,  
 expressed  in  bytes  from  the beginning of the file. (Thus, a positionof 0 is the file's start.) */
 void seek (int fd, unsigned position)
