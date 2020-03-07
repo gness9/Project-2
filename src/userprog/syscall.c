@@ -14,6 +14,7 @@
 #include "filesys/filesys.h"
 
 static void syscall_handler (struct intr_frame *);
+struct entry_file * obtain_file(int fd);
 
 /* lock makes sure that file system accesss only has one process at a time */
 /*struct lock locking_file;*/
@@ -84,8 +85,6 @@ close (int fd)
 		return;
 	}
 	
-	struct list_elem * el;
-	
 	struct entry_file *ef = obtain_file(fd);
 	
 	if(ef != NULL)
@@ -100,6 +99,9 @@ close (int fd)
 }
 
 struct entry_file * obtain_file(int fd) {
+	
+	struct list_elem * el;
+	
 	el = list_front(&thread_current()->filedes_list);
 	
 	while (el != NULL) {
