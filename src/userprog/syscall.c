@@ -40,6 +40,87 @@ syscall_handler (struct intr_frame *f UNUSED)
   thread_exit ();
 }
 
+/*Terminates Pintos by calling shutdown_power_off()*/
+void halt (void)
+{
+	shutdown_power_off();
+}
+
+/*Currently giving large warnings
+void exit(int status) 
+{
+	thread_current()->status_exit = status;
+	printf("%s: exit(%d)\n", thread_current()->name, status);
+	thread_exit ();
+}
+*/
+
+/* pid_t exec (const char * file)
+{
+	if(!file)
+	{
+		return -1;
+	}
+	pid_t child_tid = process_execute(file);
+	return child_tid;
+}
+
+
+int wait(pid_t pid)
+{
+	return process_wait(pid);
+}
+
+bool create (const char *file, unsigned initial_size)
+{
+	bool file_create = filesys_create(file, initial_size);
+	return file_create;
+} */
+
+
+bool remove (const char *file) 
+{
+	bool file_remove = filesys_remove(file);
+	return file_remove;
+}
+
+
+/* int open(const char *file) 
+{
+	
+	
+	
+} */
+
+/* int filesize (int fd) 
+{
+	struct entry_file *ef = obtain_file(fd);
+	if(ef->addr_file != NULL)
+	{
+		int file_size = file_length(ef->addr_file);
+		return file_size;
+	}
+	return -1;
+} */
+
+
+
+/* int read(int fd, void *buffer, unsigned size) 
+{
+	
+	
+	
+} */
+
+
+
+/* int write(int fd, const void *buffer, unsigned size) 
+{
+	
+	
+	
+	
+} */
 
 /*Changes  the  next  byte  to  be read  or  written  in  open  file fdto position,  
 expressed  in  bytes  from  the beginning of the file. (Thus, a positionof 0 is the file's start.) */
