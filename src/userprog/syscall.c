@@ -75,7 +75,6 @@ syscall_handler (struct intr_frame *f UNUSED)
     case SYS_OPEN:
 	  obtain_arguments(args+1);
 	  obtain_arguments(*(args+1));
-	  f->eax = open(*(args+1)); 
       break;
     case SYS_FILESIZE:
 	  obtain_arguments(args+1);
