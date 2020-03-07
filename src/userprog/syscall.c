@@ -40,18 +40,43 @@ syscall_handler (struct intr_frame *f UNUSED)
   thread_exit ();
 }
 
+/*Terminates Pintos by calling shutdown_power_off()*/
+void halt (void)
+{
+	shutdown_power_off();
+}
 
+
+bool create (const char *file, unsigned initial_size)
+{
+	bool file_create = filesys_create(file, initial_size);
+	return file_create
+}
+
+
+bool remove(const char *file) 
+{
+	bool file_remove = filesys_remove(file);
+	return file_remove;
+}
+
+
+/* int open(const char *file) 
+{
+	
+	
+	
+} */
 
 int filesize(int fd) 
 {
 	struct entry_file *ef = obtain_file(fd);
-	if(ef->file != NULL)
+	if(ef->addr_file != NULL)
 	{
-		int size = file_length(ef->file);
-		return size;
+		int file_size = file_length(ef->addr_file);
+		return file_size;
 	}
 	return -1;
-	
 }
 
 
@@ -106,8 +131,8 @@ tell (int fd)
 	
 	if(ef->addr_file != NULL)
 	{
-		unsigned pos = (unsigned) file_tell(ef->addr_file);
-		return pos;
+		unsigned file_pos = (unsigned) file_tell(ef->addr_file);
+		return file_pos;
 	}
 	
 	return -1;
