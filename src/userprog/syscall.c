@@ -18,9 +18,9 @@ struct entry_file {
 void
 syscall_init (void) 
 {
-  intr_register_int (0x30, 3, INTR_ON, syscall_handler, "syscall");
-  
   lock_init(&locking_file);
+	
+  intr_register_int (0x30, 3, INTR_ON, syscall_handler, "syscall");
 }
 
 static void
@@ -44,11 +44,11 @@ close (int fd)
 	
 	struct element_list * el;
 	
-	el = list_front(&thread_current()->file_des)
+	el = list_front(&thread_current()->file_des);
 	
 	while (el) {
 		struct entry_file *f = list_entry (el, struct entry_file, element_file);
-		if(f->file_des == fd)
+		if(fd == f->file_des)
 		{
 			file_close(t->addr_file);
 			list_remove(&t->element_file);
