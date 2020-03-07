@@ -26,16 +26,6 @@ static bool load (const char *cmdline, void (**eip) (void), void **esp);
    FILENAME.  The new thread may be scheduled (and may even exit)
    before process_execute() returns.  Returns the new process's
    thread id, or TID_ERROR if the thread cannot be created. */
-   
-   
-//Smalle addition below
-static void find_tid (struct thread *t, void * aux);
-
-static struct thread * matching_thread;
-
-static tid_t current_tid;   
-   
-   
 tid_t
 process_execute (const char *file_name) 
 {
@@ -47,61 +37,18 @@ printf("AAAAAAAAAAAAAAAAAAA");
     return TID_ERROR;
   strlcpy (fn_copy, file_name, PGSIZE);
   
-  
-  char * save_ptr;
-  char * name = strtok_r((char *)file_name, " ", &save_ptr);
-
-  /* Ensure that we weren't passed a NULL command line string (all spaces, for examples). */
-  if (name == NULL)
-  {
-    return -1;
-  }
-
-  /* Create a new thread to execute FILE_NAME. */
-  tid = thread_create (name, PRI_DEFAULT, start_process, fn_copy);
-
-  /* If we're unable to create the thread, then free its pages and exit. */
-  if (tid == TID_ERROR)
-  {
-    palloc_free_page (fn_copy);
-  }
-  else
-  {
-    /* If the thread created is a valid thread, then we must disable interupts, and add it to this threads list of child threads. */
-    current_tid = tid;
-    enum intr_level old_level = intr_disable ();
-    thread_foreach(*find_tid, NULL);
-    list_push_front(&thread_current()->child_process_list, &matching_thread->child_elem);
-    intr_set_level (old_level);
-  }
-  return tid;
-  
-  
-  
-  /* char *token,*save_ptr,*program;
+  char *token,*save_ptr,*program;
   program = malloc(strlen(file_name)+1);
   strlcpy (program, file_name, strlen(file_name)+1);
   program = strtok_r (file_name, " ", &save_ptr);
   
+  /* Create a new thread to execute FILE_NAME. */
   tid = thread_create (program, PRI_DEFAULT, start_process, fn_copy);
+  //free(program);
   if (tid == TID_ERROR)
     palloc_free_page (fn_copy); 
-  return tid; */
-  
-  /* Create a new thread to execute FILE_NAME. */
-  //free(program);
+  return tid;
 }
-
-
-//TODO CHANGE
-static void find_tid (struct thread *t, void * aux UNUSED)
-{
-  if(current_tid == t->tid)
-  {
-    matching_thread = t;
-  }
-}
-
 
 /* A thread function that loads a user process and starts it
    running. */

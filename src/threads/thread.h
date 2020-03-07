@@ -103,12 +103,6 @@ struct thread
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
     uint32_t *pagedir;                  /* Page directory. */
-	//TODO GET RID OF BELOW
-	struct list child_process_list;    /* List containing each child process. */
-    int exit_status;                   /* Stores the status upon exit */
-    struct list_elem child_elem;       /* Used to keep track of the element in the child list. */
-	struct list file_descriptors;      /* List of file descriptors belonging to this therad. */
-    int cur_fd;                        /* An integer available file descriptor. */
 #endif
 
     /* Owned by thread.c. */
