@@ -95,6 +95,7 @@ struct thread
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
 	
+	/*List to keep track of all file descriptors assigned to a particular thread*/
 	struct list filedes_list;
 	
 	int status_exit;

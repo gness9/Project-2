@@ -54,26 +54,51 @@ syscall_handler (struct intr_frame *f UNUSED)
 	  exit(*(args+1));
       break;
     case SYS_EXEC:
+	  obtain_arguments(args+1);
+	  obtain_arguments(*(args+1));
+	  f->eax = exec(*(args+1));
       break;
     case SYS_WAIT:
+	  obtain_arguments(args+1);
+	  f->eax = wait(*(args+1));
       break;
     case SYS_CREATE:
+	  obtain_arguments(args+5);
+	  obtain_arguments(*(args+4));
+	  f->eax = create((*(args+4)), (*(args+5)));
       break;
     case SYS_REMOVE:
+	  obtain_arguments(args+1);
+	  obtain_arguments(*(args+1));
+	  f->eax = remove(*(args+1));
       break;
     case SYS_OPEN:
+	  obtain_arguments(args+1);
+	  obtain_arguments(*(args+1));
+	  f->eax = open(*(args+1)); 
       break;
     case SYS_FILESIZE:
+	  obtain_arguments(args+1);
+	  f->eax = filesize(*(args+1));
       break;
     case SYS_READ:
+	  obtain_arguments(args+7);
+	  obtain_arguments(*(args+6));
       break;
     case SYS_WRITE:
+	  obtain_arguments(args+7);
+	  obtain_arguments(*(args+6));
       break;
     case SYS_SEEK:
+	  obtain_arguments(args+5);
       break;
     case SYS_TELL:
+	  obtain_arguments(args+1);
+	  tell(*(args+1));
       break;
     case SYS_CLOSE:
+	  obtain_arguments(args+1);
+	  close(*(args+1));
       break;	
   }
   thread_exit ();
