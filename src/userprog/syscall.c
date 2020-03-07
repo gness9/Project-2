@@ -51,9 +51,9 @@ void seek(int fd, unsigned position)
 	
 	struct entry_file *ef = obtain_file(fd);
 	
-	if(ef->file != NULL)
+	if(ef->addr_file != NULL)
 	{
-		file_seek(ef->file, position);
+		file_seek(ef->addr_file, position);
 	}
 	
 	return;
