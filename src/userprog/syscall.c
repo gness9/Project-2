@@ -15,7 +15,7 @@
 
 static void syscall_handler (struct intr_frame *);
 struct entry_file * obtain_file(int fd);
-void obtain_arguments(const void *vaddr);
+void * obtain_arguments(const void *vaddr);
 
 /* lock makes sure that file system accesss only has one process at a time */
 /*struct lock locking_file;*/
@@ -79,7 +79,7 @@ syscall_handler (struct intr_frame *f UNUSED)
   thread_exit ();
 }
 
-void* obtain_arguments(const void *vaddr) {
+void * obtain_arguments(const void *vaddr) {
 	void *ptr = pagedir_get_page(thread_current()->pagedir, vaddr);
 	if (!ptr)
 	{
