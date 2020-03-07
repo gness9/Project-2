@@ -53,9 +53,9 @@ tell (int fd)
 	
 	struct entry_file *ef = obtain_file(fd);
 	
-	if(ef->file != NULL)
+	if(ef->addr_file != NULL)
 	{
-		unsigned pos = (unsigned) file_tell(f);
+		unsigned pos = (unsigned) file_tell(ef->addr_file);
 		return pos;
 	}
 	
