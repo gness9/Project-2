@@ -92,7 +92,7 @@ bool remove (const char *file)
 	
 } */
 
-/* int filesize (int fd) 
+int filesize (int fd) 
 {
 	struct entry_file *ef = obtain_file(fd);
 	if(ef->addr_file != NULL)
@@ -101,7 +101,7 @@ bool remove (const char *file)
 		return file_size;
 	}
 	return -1;
-} */
+}
 
 
 
