@@ -50,7 +50,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 	  halt();
       break;
     case SYS_EXIT:
-	  obtain_addr(args+1);
+	  obtain_arguments(args+1);
 	  exit(*(args+1));
       break;
     case SYS_EXEC:
@@ -79,11 +79,11 @@ syscall_handler (struct intr_frame *f UNUSED)
   thread_exit ();
 }
 
-void obtain_arguments(const void *vaddr) {
+void* obtain_arguments(const void *vaddr) {
 	void *ptr = pagedir_get_page(thread_current()->pagedir, vaddr);
 	if (!ptr)
 	{
-		exit_proc(-1);
+		exit(-1);
 		return 0;
 	}
 	return ptr;
