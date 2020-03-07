@@ -55,9 +55,8 @@ void exit(int status)
 }
 */
 
-pid_t exec (const char * file)
+/* pid_t exec (const char * file)
 {
-  /* If a null file is passed in, return a -1. */
 	if(!file)
 	{
 		return -1;
@@ -76,7 +75,7 @@ bool create (const char *file, unsigned initial_size)
 {
 	bool file_create = filesys_create(file, initial_size);
 	return file_create;
-}
+} */
 
 
 bool remove (const char *file) 
