@@ -54,7 +54,7 @@ bool create (const char *file, unsigned initial_size)
 }
 
 
-bool remove(const char *file) 
+bool remove (const char *file) 
 {
 	bool file_remove = filesys_remove(file);
 	return file_remove;
@@ -68,7 +68,7 @@ bool remove(const char *file)
 	
 } */
 
-int filesize(int fd) 
+int filesize (int fd) 
 {
 	struct entry_file *ef = obtain_file(fd);
 	if(ef->addr_file != NULL)
@@ -100,7 +100,7 @@ int filesize(int fd)
 
 /*Changes  the  next  byte  to  be read  or  written  in  open  file fdto position,  
 expressed  in  bytes  from  the beginning of the file. (Thus, a positionof 0 is the file's start.) */
-void seek(int fd, unsigned position)
+void seek (int fd, unsigned position)
 {	
 	if(list_empty(&thread_current()->filedes_list)) {
 		return;
