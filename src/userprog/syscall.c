@@ -7,7 +7,7 @@
 static void syscall_handler (struct intr_frame *);
 
 /* lock makes sure that file system accesss only has one process at a time */
-struct lock locking_file;
+/*struct lock locking_file;*/
 
 struct entry_file {
 	struct file* addr_file;
@@ -35,10 +35,10 @@ by calling this function for each one. */
 void
 close (int fd)
 { 
-	lock_acquire(&locking_file);
+	/*lock_acquire(&locking_file);*/
 	
 	if(list_empty(&thread_current()->filedes_list)) {
-		lock_release(&locking_file);
+		/*lock_release(&locking_file);*/
 		return;
 	}
 	
@@ -50,15 +50,15 @@ close (int fd)
 		struct entry_file *f = list_entry (el, struct entry_file, element_file);
 		if(fd == f->file_des)
 		{
-			file_close(t->addr_file);
-			list_remove(&t->element_file);
-			lock_release(&locking_file);
+			file_close(f->addr_file);
+			list_remove(&f->element_file);
+			/*lock_release(&locking_file);*/
 			return;
 		}
 		el = el->next;
 	}
 	
-	lock_release(&locking_file);
+	/*lock_release(&locking_file);*/
 	
 	return;
 
