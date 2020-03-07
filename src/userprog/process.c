@@ -37,17 +37,49 @@ printf("AAAAAAAAAAAAAAAAAAA");
     return TID_ERROR;
   strlcpy (fn_copy, file_name, PGSIZE);
   
-  char *token,*save_ptr,*program;
+  
+  char * save_ptr;
+  char * name = strtok_r((char *)file_name, " ", &save_ptr);
+
+  /* Ensure that we weren't passed a NULL command line string (all spaces, for examples). */
+  if (name == NULL)
+  {
+    return -1;
+  }
+
+  /* Create a new thread to execute FILE_NAME. */
+  tid = thread_create (name, PRI_DEFAULT, start_process, fn_copy);
+
+  /* If we're unable to create the thread, then free its pages and exit. */
+  if (tid == TID_ERROR)
+  {
+    palloc_free_page (fn_copy);
+  }
+  else
+  {
+    /* If the thread created is a valid thread, then we must disable interupts, and add it to this threads list of child threads. */
+    current_tid = tid;
+    enum intr_level old_level = intr_disable ();
+    thread_foreach(*find_tid, NULL);
+    list_push_front(&thread_current()->child_process_list, &matching_thread->child_elem);
+    intr_set_level (old_level);
+  }
+  return tid;
+  
+  
+  
+  /* char *token,*save_ptr,*program;
   program = malloc(strlen(file_name)+1);
   strlcpy (program, file_name, strlen(file_name)+1);
   program = strtok_r (file_name, " ", &save_ptr);
   
-  /* Create a new thread to execute FILE_NAME. */
   tid = thread_create (program, PRI_DEFAULT, start_process, fn_copy);
-  //free(program);
   if (tid == TID_ERROR)
     palloc_free_page (fn_copy); 
-  return tid;
+  return tid; */
+  
+  /* Create a new thread to execute FILE_NAME. */
+  //free(program);
 }
 
 /* A thread function that loads a user process and starts it
