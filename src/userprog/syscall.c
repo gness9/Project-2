@@ -39,6 +39,39 @@ syscall_handler (struct intr_frame *f UNUSED)
   thread_exit ();
 }
 
+
+/*Returns  the  position  of  the  next  byte  to  be  read  or  written  in  open  file fd,  
+expressed  in  bytes  from  the beginning of the file. */
+/* unsigned
+tell (int fd)
+{
+	struct list_elem * el;
+	
+	if(list_empty(&thread_current()->filedes_list)) {
+		return -1;
+	}
+	
+	el = list_front(&thread_current()->filedes_list);
+	
+	while (el != NULL) {
+		struct entry_file *f = list_entry (el, struct entry_file, element_file);
+		if(fd == f->des_file)
+		{
+			unsigned position ;
+			list_remove(&f->element_file);
+			return -1;
+		}
+		el = el->next;
+	}
+	
+	return -1;
+	
+	
+} */
+
+
+
+
 /*Closes file descriptor fd. Exiting or terminating a process implicitly closes all its open file descriptors, as if
 by calling this function for each one. */
 void
@@ -53,22 +86,29 @@ close (int fd)
 	
 	struct list_elem * el;
 	
+	struct entry_file *ef = obtain_file(fd);
+	
+	if(ef != NULL)
+	{
+		file_close(ef->addr_file);
+		list_remove(&ef->element_file);
+		return;
+	}
+	
+	return;
+
+}
+
+struct entry_file * obtain_file(int fd) {
 	el = list_front(&thread_current()->filedes_list);
 	
 	while (el != NULL) {
 		struct entry_file *f = list_entry (el, struct entry_file, element_file);
 		if(fd == f->des_file)
 		{
-			file_close(f->addr_file);
-			list_remove(&f->element_file);
-			/*lock_release(&locking_file);*/
-			return;
+			return f;
 		}
 		el = el->next;
 	}
-	
-	/*lock_release(&locking_file);*/
-	
-	return;
-
+	return NULL;
 }
