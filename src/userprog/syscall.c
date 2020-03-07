@@ -47,10 +47,34 @@ void halt (void)
 }
 
 
+void exit(int status) 
+{
+	thread_current()->exit_status = status;
+	printf("%s: exit(%d)\n", thread_current()->name, status);
+	thread_exit ();
+}
+
+pid_t exec (const char * file)
+{
+  /* If a null file is passed in, return a -1. */
+	if(!file)
+	{
+		return -1;
+	}
+	pid_t child_tid = process_execute(file);
+	return child_tid;
+}
+
+
+int wait(pid_t pid)
+{
+	return process_wait(pid);
+}
+
 bool create (const char *file, unsigned initial_size)
 {
 	bool file_create = filesys_create(file, initial_size);
-	return file_create
+	return file_create;
 }
 
 
