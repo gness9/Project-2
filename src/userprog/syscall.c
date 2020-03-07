@@ -41,6 +41,25 @@ syscall_handler (struct intr_frame *f UNUSED)
 }
 
 
+/*Changes  the  next  byte  to  be read  or  written  in  open  file fdto position,  
+expressed  in  bytes  from  the beginning of the file. (Thus, a positionof 0 is the file's start.) */
+void seek(int fd, unsigned position)
+{	
+	if(list_empty(&thread_current()->filedes_list)) {
+		return;
+	}
+	
+	struct entry_file *ef = obtain_file(fd);
+	
+	if(ef->file != NULL)
+	{
+		file_seek(ef->file, position);
+	}
+	
+	return;
+	
+}
+
 /*Returns  the  position  of  the  next  byte  to  be  read  or  written  in  open  file fd,  
 expressed  in  bytes  from  the beginning of the file. */
 unsigned
@@ -60,7 +79,6 @@ tell (int fd)
 	}
 	
 	return -1;
-	
 	
 } 
 
