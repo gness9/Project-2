@@ -91,7 +91,6 @@ void
 close (int fd)
 { 
 	/*lock_acquire(&locking_file);*/
-	acquire_filesys_lock();
 	
 	if(list_empty(&thread_current()->filedes_list)) {
 		/*lock_release(&locking_file);*/
@@ -106,8 +105,6 @@ close (int fd)
 		list_remove(&ef->element_file);
 		return;
 	}
-	
-	release_filesys_lock();
 	
 	return;
 
