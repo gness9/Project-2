@@ -26,6 +26,16 @@ static bool load (const char *cmdline, void (**eip) (void), void **esp);
    FILENAME.  The new thread may be scheduled (and may even exit)
    before process_execute() returns.  Returns the new process's
    thread id, or TID_ERROR if the thread cannot be created. */
+   
+   
+//Smalle addition below
+static void find_tid (struct thread *t, void * aux);
+
+static struct thread * matching_thread;
+
+static tid_t current_tid;   
+   
+   
 tid_t
 process_execute (const char *file_name) 
 {
@@ -81,6 +91,17 @@ printf("AAAAAAAAAAAAAAAAAAA");
   /* Create a new thread to execute FILE_NAME. */
   //free(program);
 }
+
+
+//TODO CHANGE
+static void find_tid (struct thread *t, void * aux UNUSED)
+{
+  if(current_tid == t->tid)
+  {
+    matching_thread = t;
+  }
+}
+
 
 /* A thread function that loads a user process and starts it
    running. */
