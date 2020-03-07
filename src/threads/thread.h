@@ -96,8 +96,6 @@ struct thread
     struct list_elem elem;              /* List element. */
 	
 	struct list filedes_list;
-	
-	int status_exit;
 
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
