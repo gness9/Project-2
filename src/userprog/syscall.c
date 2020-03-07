@@ -41,6 +41,38 @@ syscall_handler (struct intr_frame *f UNUSED)
 }
 
 
+
+int filesize(int fd) 
+{
+	struct entry_file *ef = obtain_file(fd);
+	if(ef->file != NULL)
+	{
+		int size = file_length(ef->file);
+		return size;
+	}
+	return -1;
+	
+}
+
+
+
+/* int read(int fd, void *buffer, unsigned size) 
+{
+	
+	
+	
+} */
+
+
+
+/* int write(int fd, const void *buffer, unsigned size) 
+{
+	
+	
+	
+	
+} */
+
 /*Changes  the  next  byte  to  be read  or  written  in  open  file fdto position,  
 expressed  in  bytes  from  the beginning of the file. (Thus, a positionof 0 is the file's start.) */
 void seek(int fd, unsigned position)
