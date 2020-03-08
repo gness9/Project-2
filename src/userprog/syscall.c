@@ -54,7 +54,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 	  exit(status);
       break;
     case SYS_EXEC: ;
-	  const char * cmd_line = *((char*)f->esp+1);
+	  char * cmd_line = (char*)(*((int*)f->esp+1));
 	  f->eax = exec(cmd_line);
       break;
     case SYS_WAIT: ;
@@ -62,7 +62,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 	  f->eax = wait(pid);
       break;
     case SYS_CREATE:
-	  //const char * file = obtain_arguments(args+5);
+	  //char * file = obtain_arguments(args+5);
 	  //unsigned initial_size = obtain_arguments(*(args+4));
 	  //f->eax = create((*(args+4)), (*(args+5)));
       break;
@@ -79,12 +79,12 @@ syscall_handler (struct intr_frame *f UNUSED)
       break;
     case SYS_READ:
 	  //int fd = obtain_arguments(args+7);
-	  //const void * buffer = obtain_arguments(*(args+6));
+	  //void * buffer = obtain_arguments(*(args+6));
       //unsigned size = obtain_arguments(*(args+6));
 	  break;
     case SYS_WRITE:
 	  //int fd = obtain_arguments(args+7);
-	  //const void * buffer = obtain_arguments(*(args+6));
+	  //void * buffer = obtain_arguments(*(args+6));
       //unsigned size = obtain_arguments(*(args+6));
       break;
     case SYS_SEEK:
