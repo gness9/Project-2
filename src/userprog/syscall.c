@@ -187,7 +187,7 @@ int filesize (int fd)
 }
 
 /*Reads sizebytes from the file open as fdinto buffer. Returns the number of 
-bytes actually read (0 at end of file),  or -1  if  the  file  could  not  be  read 
+bytes actually read (0 at end of file),  or -1  if  the  file  could  not  be  read */
 /* int read(int fd, void *buffer, unsigned size) 
 {
 	
