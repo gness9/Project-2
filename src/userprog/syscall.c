@@ -62,42 +62,46 @@ syscall_handler (struct intr_frame *f UNUSED)
 	  f->eax = wait(pid);
       break;
     case SYS_CREATE:
-	  //char * file = obtain_arguments(args+5);
-	  //unsigned initial_size = obtain_arguments(*(args+4));
-	  //f->eax = create((*(args+4)), (*(args+5)));
+	  char * file = (char*)(*((int*)f->esp+1));
+	  unsigned initial_size = *((unsigned*)f->esp+2);
+	  f->eax = create(file, initial_size);
       break;
     case SYS_REMOVE:
-	  //const char * file = obtain_arguments(args+1);
-	  //f->eax = remove(*(args+1));
+	  char * file = (char*)(*((int*)f->esp+1));
+	  f->eax = remove(file);
       break;
     case SYS_OPEN:
-	  //const char * file = obtain_arguments(args+1);
+	  char * file = (char*)(*((int*)f->esp+1));
+	  //f->eax = open(file);
       break;
     case SYS_FILESIZE:
-	  //int fd = obtain_arguments(args+1);
-	  //f->eax = filesize(*(args+1));
+	  int fd = *((int*)f->esp+1);
+	  f->eax = filesize(fd);
       break;
     case SYS_READ:
-	  //int fd = obtain_arguments(args+7);
-	  //void * buffer = obtain_arguments(*(args+6));
-      //unsigned size = obtain_arguments(*(args+6));
+	  int fd = *((int*)f->esp+1);
+	  void * buffer = (void*)(*((int*)f->esp+2));
+      unsigned size = *((unsigned*)f->esp+3);
+      //f->eax = read(fd, buffer, size);
 	  break;
     case SYS_WRITE:
-	  //int fd = obtain_arguments(args+7);
-	  //void * buffer = obtain_arguments(*(args+6));
-      //unsigned size = obtain_arguments(*(args+6));
+	  int fd = *((int*)f->esp+1);
+	  void * buffer = (void*)(*((int*)f->esp+2));
+      unsigned size = *((unsigned*)f->esp+3);
+	  //f->eax = open(fd, buffer, size);
       break;
     case SYS_SEEK:
-	  //int fd = obtain_arguments(args+5);
-	  //unsigned position = obtain_arguments(args+5);
+	  int fd = *((int*)f->esp+1);
+	  unsigned position = *((unsigned*)f->esp+2);
+	  f->eax = seek(fd, position);
       break;
     case SYS_TELL:
-	  //int fd = obtain_arguments(args+1);
-	  //tell(*(args+1));
+	  int fd = *((int*)f->esp+1);
+	  tell(fd);
       break;
     case SYS_CLOSE:
-	  //int fd = obtain_arguments(args+1);
-	  //close(fd);
+	  int fd = *((int*)f->esp+1);
+	  close(fd);
       break;	
   }
   thread_exit ();
