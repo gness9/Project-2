@@ -61,45 +61,45 @@ syscall_handler (struct intr_frame *f UNUSED)
 	  pid_t pid = *((pid_t*)f->esp+1);
 	  f->eax = wait(pid);
       break;
-    case SYS_CREATE:
+    case SYS_CREATE: ;
 	  char * file = (char*)(*((int*)f->esp+1));
 	  unsigned initial_size = *((unsigned*)f->esp+2);
 	  f->eax = create(file, initial_size);
       break;
-    case SYS_REMOVE:
+    case SYS_REMOVE: ;
 	  char * file = (char*)(*((int*)f->esp+1));
 	  f->eax = remove(file);
       break;
-    case SYS_OPEN:
+    case SYS_OPEN: ;
 	  char * file = (char*)(*((int*)f->esp+1));
 	  //f->eax = open(file);
       break;
-    case SYS_FILESIZE:
+    case SYS_FILESIZE: ;
 	  int fd = *((int*)f->esp+1);
 	  f->eax = filesize(fd);
       break;
-    case SYS_READ:
+    case SYS_READ: ;
 	  int fd = *((int*)f->esp+1);
 	  void * buffer = (void*)(*((int*)f->esp+2));
       unsigned size = *((unsigned*)f->esp+3);
       //f->eax = read(fd, buffer, size);
 	  break;
-    case SYS_WRITE:
+    case SYS_WRITE: ;
 	  int fd = *((int*)f->esp+1);
 	  void * buffer = (void*)(*((int*)f->esp+2));
       unsigned size = *((unsigned*)f->esp+3);
 	  //f->eax = open(fd, buffer, size);
       break;
-    case SYS_SEEK:
+    case SYS_SEEK: ;
 	  int fd = *((int*)f->esp+1);
 	  unsigned position = *((unsigned*)f->esp+2);
 	  f->eax = seek(fd, position);
       break;
-    case SYS_TELL:
+    case SYS_TELL: ;
 	  int fd = *((int*)f->esp+1);
 	  tell(fd);
       break;
-    case SYS_CLOSE:
+    case SYS_CLOSE: ;
 	  int fd = *((int*)f->esp+1);
 	  close(fd);
       break;	
