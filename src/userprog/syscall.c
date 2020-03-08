@@ -284,7 +284,7 @@ struct entry_file * obtain_file(int fd) {
 void close_all_files(struct list* files)
 {
 
-	struct list_elem *e;
+	/* struct list_elem *e;
 
 	while(!list_empty(files))
 	{
@@ -297,7 +297,7 @@ void close_all_files(struct list* files)
 	      	free(f);
 
 
-	}
+	} */
 
       
 }
@@ -305,7 +305,7 @@ void close_all_files(struct list* files)
 void exit_proc(int status)
 {
 	//printf("Exit : %s %d %d\n",thread_current()->name, thread_current()->tid, status);
-	struct list_elem *e;
+	/* struct list_elem *e;
 
       for (e = list_begin (&thread_current()->parent->child_proc); e != list_end (&thread_current()->parent->child_proc);
            e = list_next (e))
@@ -324,5 +324,5 @@ void exit_proc(int status)
 	if(thread_current()->parent->waitingon == thread_current()->tid)
 		sema_up(&thread_current()->parent->child_lock);
 
-	thread_exit();
+	thread_exit(); */
 }
