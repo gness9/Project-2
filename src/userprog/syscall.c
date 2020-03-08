@@ -229,7 +229,8 @@ int write(int fd, const void *buffer, unsigned size)
 
 	if (fd == 1)
 	{
-		return (int) putbuf(fd, size);
+		putbuf(buffer, size);
+		return size;
 	}
 
 	for (e = list_begin (&thread_current()->filedes_list); e != list_end (&thread_current()->filedes_list);
