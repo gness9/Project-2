@@ -89,6 +89,10 @@ struct thread
     uint8_t *stack;                     /* Saved stack pointer. */
     int priority;                       /* Priority. */
     struct list_elem allelem;           /* List element for all threads list. */
+	int exit_status;
+	struct list child_list;
+	struct semaphore *hold;
+	struct list_elem celem;
     long toExpire;
     struct list_elem telem;
 
