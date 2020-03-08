@@ -21,6 +21,17 @@
 
 static thread_func start_process NO_RETURN;
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
+static void find_tid (struct thread *t, void * aux);
+static struct thread * matching_thread;
+static tid_t current_tid;
+
+static void find_tid (struct thread *t, void * aux UNUSED)
+{
+  if(current_tid == t->tid)
+  {
+    matching_thread = t;
+  }
+}
 
 /* Starts a new thread running a user program loaded from
    FILENAME.  The new thread may be scheduled (and may even exit)
@@ -31,7 +42,7 @@ process_execute (const char *file_name)
 {
   char *fn_copy;
   tid_t tid;
-printf("AAAABEGINNING");
+//printf("AAAABEGINNING");
    fn_copy = palloc_get_page (0);
   if (fn_copy == NULL)
     return TID_ERROR;
@@ -45,8 +56,15 @@ printf("AAAABEGINNING");
   /* Create a new thread to execute FILE_NAME. */
   tid = thread_create (program, PRI_DEFAULT, start_process, fn_copy);
   //free(program);
-  if (tid == TID_ERROR)
-    palloc_free_page (fn_copy); 
+  if (tid == TID_ERROR){
+  palloc_free_page (fn_copy); }
+  else{
+	current_tid = tid;
+    enum intr_level old_level = intr_disable ();
+    thread_foreach(*find_tid, NULL);
+    list_push_front(&thread_current()->child_list, &matching_thread->celem);
+    intr_set_level (old_level);
+  }
   return tid;
 }
 
@@ -54,7 +72,8 @@ printf("AAAABEGINNING");
    running. */
 static void
 start_process (void *file_name_)
-{printf("VBBBBBBBBBBBBBBBBBBBBB");
+{
+	//printf("VBBBBBBBBBBBBBBBBBBBBB");
 	printf("\nStart: %s\n",file_name_);
   char *file_name = file_name_;
   struct intr_frame if_;
@@ -94,8 +113,24 @@ start_process (void *file_name_)
 int
 process_wait (tid_t child_tid UNUSED) 
 {
-  //sema_down(&thread_current()->sema);
-  return -1;
+  struct thread *ct = NULL;
+  struct list_elem * temp;
+  if(list_empty(&thread_current()->child_list))
+	  return -1;
+  for(struct list_elem *temp = list_front(&thread_current()->child_list); temp != NULL; temp = temp->next){
+	  struct thread *t = list_entry (temp, struct thread, celem);
+	  if(t->tid == child_tid){
+		  ct = t;
+		  break;
+	  }
+  }
+  if(ct == NULL){
+	  return -1;
+  }
+  list_remove(&ct->celem);
+  sema_down(&ct->hold);
+	return ct->exit_status;
+
 }
 
 /* Free the current process's resources. */
@@ -215,7 +250,7 @@ static bool load_segment (struct file *file, off_t ofs, uint8_t *upage,
 bool
 load (const char *file_name, void (**eip) (void), void **esp) 
 {
-printf("\nLOAD: %s\n",file_name);
+//printf("\nLOAD: %s\n",file_name);
   struct thread *t = thread_current ();
   struct Elf32_Ehdr ehdr;
   struct file *file = NULL;
@@ -448,7 +483,7 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
 static bool
 setup_stack (const char * file_name, void **esp) 
 {
-  printf("DDDDDDDDDDDDDDDDDDd");
+  //printf("DDDDDDDDDDDDDDDDDDd");
   uint8_t *kpage;
   bool success = false;
   char *save_ptr;
