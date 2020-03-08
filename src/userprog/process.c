@@ -21,6 +21,17 @@
 
 static thread_func start_process NO_RETURN;
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
+static void find_tid (struct thread *t, void * aux);
+static struct thread * matching_thread;
+static tid_t current_tid;
+
+static void find_tid (struct thread *t, void * aux UNUSED)
+{
+  if(current_tid == t->tid)
+  {
+    matching_thread = t;
+  }
+}
 
 /* Starts a new thread running a user program loaded from
    FILENAME.  The new thread may be scheduled (and may even exit)
@@ -31,7 +42,7 @@ process_execute (const char *file_name)
 {
   char *fn_copy;
   tid_t tid;
-printf("AAAAAAAAAAAAAAAAAAA");
+//printf("AAAABEGINNING");
    fn_copy = palloc_get_page (0);
   if (fn_copy == NULL)
     return TID_ERROR;
@@ -45,8 +56,15 @@ printf("AAAAAAAAAAAAAAAAAAA");
   /* Create a new thread to execute FILE_NAME. */
   tid = thread_create (program, PRI_DEFAULT, start_process, fn_copy);
   //free(program);
-  if (tid == TID_ERROR)
-    palloc_free_page (fn_copy); 
+  if (tid == TID_ERROR){
+  palloc_free_page (fn_copy); }
+  else{
+	current_tid = tid;
+    enum intr_level old_level = intr_disable ();
+    thread_foreach(*find_tid, NULL);
+    list_push_front(&thread_current()->child_list, &matching_thread->celem);
+    intr_set_level (old_level);
+  }
   return tid;
 }
 
@@ -54,7 +72,8 @@ printf("AAAAAAAAAAAAAAAAAAA");
    running. */
 static void
 start_process (void *file_name_)
-{printf("VBBBBBBBBBBBBBBBBBBBBB");
+{
+	//printf("VBBBBBBBBBBBBBBBBBBBBB");
 	printf("\nStart: %s\n",file_name_);
   char *file_name = file_name_;
   struct intr_frame if_;
@@ -94,8 +113,24 @@ start_process (void *file_name_)
 int
 process_wait (tid_t child_tid UNUSED) 
 {
-  //sema_down(&thread_current()->sema);
-  return -1;
+  struct thread *ct = NULL;
+  struct list_elem * temp;
+  if(list_empty(&thread_current()->child_list))
+	  return -1;
+  for(struct list_elem *temp = list_front(&thread_current()->child_list); temp != NULL; temp = temp->next){
+	  struct thread *t = list_entry (temp, struct thread, celem);
+	  if(t->tid == child_tid){
+		  ct = t;
+		  break;
+	  }
+  }
+  if(ct == NULL){
+	  return -1;
+  }
+  list_remove(&ct->celem);
+  sema_down(&ct->hold);
+	return ct->exit_status;
+
 }
 
 /* Free the current process's resources. */
@@ -215,7 +250,7 @@ static bool load_segment (struct file *file, off_t ofs, uint8_t *upage,
 bool
 load (const char *file_name, void (**eip) (void), void **esp) 
 {
-printf("\nLOAD: %s\n",file_name);
+//printf("\nLOAD: %s\n",file_name);
   struct thread *t = thread_current ();
   struct Elf32_Ehdr ehdr;
   struct file *file = NULL;
@@ -448,21 +483,98 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
 static bool
 setup_stack (const char * file_name, void **esp) 
 {
-  printf("DDDDDDDDDDDDDDDDDDd");
+  //printf("DDDDDDDDDDDDDDDDDDd");
   uint8_t *kpage;
   bool success = false;
   char *save_ptr;
   char *fname;
+  int size = 0;
   kpage = palloc_get_page (PAL_USER | PAL_ZERO);
   if (kpage != NULL) 
     {
       success = install_page (((uint8_t *) PHYS_BASE) - PGSIZE, kpage, true);
       if (success)
-        *esp = PHYS_BASE;
+		*esp = PHYS_BASE - 12;
       else
         palloc_free_page (kpage);
     }
+	
   char *token;
+  char *temp = malloc(strlen(file_name)+1);
+  strlcpy(temp, file_name, strlen(file_name)+1);
+  int argc = 0, i;
+  for(token = strtok_r(temp, " ", &save_ptr); token != NULL; token = strtok_r(NULL, " ", &save_ptr)){
+	  argc++;
+  }
+  int *argv = calloc(argc, sizeof(int));
+  for(token = strtok_r(file_name, " ", &save_ptr), i = 0; token != NULL; token = strtok_r(NULL, " ", &save_ptr), i++){
+	  printf("\nTOK: %s",token);
+	  argv[i] = token;
+	  //argv[i] = strlcat(token, "\0", strlen(token)+2);
+  }
+  int k = argc;
+  while(k > 0){
+	  printf("\nA: %s - %d",argv[k-1],k-1);
+	  size += strlen(argv[k-1]) + 1;
+	  *esp -= strlen(argv[k-1]) + 1;
+	  memcpy(*esp, argv[k-1], strlen(argv[k-1]) + 1);
+	  k--;
+  }
+  printf("SIZE OF %d - %d",sizeof(char),sizeof(int));
+  int cnt = (int)*esp%4;
+  char * chzero = 0;
+  int intzero = 0;
+	  size += cnt;
+  while(cnt > 0){
+	  *esp -= sizeof(char);
+	  memcpy(*esp, 0, 1);
+	  cnt--;
+  }
+  size += sizeof(int);
+  *esp -= sizeof(int);
+  memcpy(*esp, &intzero, sizeof(int));
+  size += sizeof(int);
+  
+  cnt = 0;
+  k = argc;
+  while(k > 1){
+	  *esp -= sizeof(char*);
+		size += sizeof(char*);
+	  memcpy(*esp, &argv[k-1], strlen(argv[k-1]) + 1);
+	  k--;
+  }
+  *esp -= sizeof(char**);
+  memcpy(*esp, &argv[0], sizeof(char**));
+  size += sizeof(char**);
+  
+  size += sizeof(int);
+  *esp -= sizeof(int);
+  memcpy(*esp, &argc, sizeof(int));
+  
+  
+  
+  //void * point = NULL;
+  //*esp -= sizeof(point);
+  //memcpy(*esp, &point, sizeof(point));
+  /*
+  *esp -= sizeof(argc);
+  cnt = (int)*esp%4;
+  while(cnt > 0){
+	  *esp -= 1;
+	  memset(*esp, 0, 1);
+	  cnt--;
+  }*/
+  /*void * point = NULL;
+  *esp -= sizeof(point);
+  memcpy(*esp, &point, sizeof(point));*/
+	
+	
+
+  printf("\n");
+  hex_dump(0, *esp, size, 1);
+	hex_dump((int)*esp+size, *esp, size, 1);
+	hex_dump((uintptr_t)*esp, *esp, sizeof(char) * 8, true);
+  /*char *token;
   int argc = 0,i;
   char *temp = malloc(strlen(file_name)+1);
   strlcpy(temp, file_name, strlen(file_name)+1);
@@ -504,11 +616,10 @@ setup_stack (const char * file_name, void **esp)
   memcpy(*esp,&argc,sizeof(int));
 
   *esp-=sizeof(int);
-  memcpy(*esp,&zero,sizeof(int));
+  memcpy(*esp,&zero,sizeof(int));*/
 
   free(temp);
   free(argv);
-	hex_dump((uintptr_t)*esp, *esp, sizeof(char) * 8, true);
 
   return success;
 }
