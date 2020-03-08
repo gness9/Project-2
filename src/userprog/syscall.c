@@ -49,15 +49,15 @@ syscall_handler (struct intr_frame *f UNUSED)
     case SYS_HALT:
 	  halt();
       break;
-    case SYS_EXIT:
+    case SYS_EXIT: ;
 	  int status = *((int*)f->esp+1);
 	  exit(status);
       break;
-    case SYS_EXEC:
+    case SYS_EXEC: ;
 	  const char * cmd_line = (const*)(*((char*)f->esp+1));
 	  f->eax = exec(cmd_line);
       break;
-    case SYS_WAIT:
+    case SYS_WAIT: ;
 	  pid_t pid = *((pid_t*)f->esp+1);
 	  f->eax = wait(pid);
       break;
