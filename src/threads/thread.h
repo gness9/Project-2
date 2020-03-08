@@ -99,6 +99,23 @@ struct thread
 	struct list filedes_list;
 	
 	int status_exit;
+	
+	int64_t waketick;
+
+    bool success;
+    
+    int exit_error;
+
+    struct list child_proc;
+    struct thread* parent;
+
+    struct file *self;
+
+    struct list files;
+    int fd_count;
+
+    struct semaphore child_lock;
+    int waitingon;
 
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
