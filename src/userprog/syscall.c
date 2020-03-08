@@ -280,3 +280,49 @@ struct entry_file * obtain_file(int fd) {
 	}
 	return NULL;
 }
+
+void close_all_files(struct list* files)
+{
+
+	struct list_elem *e;
+
+	while(!list_empty(files))
+	{
+		e = list_pop_front(files);
+
+		struct proc_file *f = list_entry (e, struct proc_file, elem);
+          
+	      	file_close(f->ptr);
+	      	list_remove(e);
+	      	free(f);
+
+
+	}
+
+      
+}
+
+void exit_proc(int status)
+{
+	//printf("Exit : %s %d %d\n",thread_current()->name, thread_current()->tid, status);
+	struct list_elem *e;
+
+      for (e = list_begin (&thread_current()->parent->child_proc); e != list_end (&thread_current()->parent->child_proc);
+           e = list_next (e))
+        {
+          struct child *f = list_entry (e, struct child, elem);
+          if(f->tid == thread_current()->tid)
+          {
+          	f->used = true;
+          	f->exit_error = status;
+          }
+        }
+
+
+	thread_current()->exit_error = status;
+
+	if(thread_current()->parent->waitingon == thread_current()->tid)
+		sema_up(&thread_current()->parent->child_lock);
+
+	thread_exit();
+}
