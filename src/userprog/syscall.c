@@ -50,67 +50,57 @@ syscall_handler (struct intr_frame *f UNUSED)
 	  halt();
       break;
     case SYS_EXIT:
-	  obtain_arguments(args+1);
-	  exit(*(args+1));
+	  int status = *((int*)f->esp+1);
+	  exit(status);
       break;
     case SYS_EXEC:
-	  obtain_arguments(args+1);
-	  obtain_arguments(*(args+1));
-	  f->eax = exec(*(args+1));
+	  const char * cmd_line = (const*)(*((char*)f->esp+1));
+	  f->eax = exec(cmd_line);
       break;
     case SYS_WAIT:
-	  obtain_arguments(args+1);
-	  f->eax = wait(*(args+1));
+	  pid_t pid = *((pid_t*)f->esp+1);
+	  f->eax = wait(pid);
       break;
     case SYS_CREATE:
-	  obtain_arguments(args+5);
-	  obtain_arguments(*(args+4));
-	  f->eax = create((*(args+4)), (*(args+5)));
+	  //const char * file = obtain_arguments(args+5);
+	  //unsigned initial_size = obtain_arguments(*(args+4));
+	  //f->eax = create((*(args+4)), (*(args+5)));
       break;
     case SYS_REMOVE:
-	  obtain_arguments(args+1);
-	  obtain_arguments(*(args+1));
-	  f->eax = remove(*(args+1));
+	  //const char * file = obtain_arguments(args+1);
+	  //f->eax = remove(*(args+1));
       break;
     case SYS_OPEN:
-	  obtain_arguments(args+1);
-	  obtain_arguments(*(args+1));
+	  //const char * file = obtain_arguments(args+1);
       break;
     case SYS_FILESIZE:
-	  obtain_arguments(args+1);
-	  f->eax = filesize(*(args+1));
+	  //int fd = obtain_arguments(args+1);
+	  //f->eax = filesize(*(args+1));
       break;
     case SYS_READ:
-	  obtain_arguments(args+7);
-	  obtain_arguments(*(args+6));
-      break;
+	  //int fd = obtain_arguments(args+7);
+	  //const void * buffer = obtain_arguments(*(args+6));
+      //unsigned size = obtain_arguments(*(args+6));
+	  break;
     case SYS_WRITE:
-	  obtain_arguments(args+7);
-	  obtain_arguments(*(args+6));
+	  //int fd = obtain_arguments(args+7);
+	  //const void * buffer = obtain_arguments(*(args+6));
+      //unsigned size = obtain_arguments(*(args+6));
       break;
     case SYS_SEEK:
-	  obtain_arguments(args+5);
+	  //int fd = obtain_arguments(args+5);
+	  //unsigned position = obtain_arguments(args+5);
       break;
     case SYS_TELL:
-	  obtain_arguments(args+1);
-	  tell(*(args+1));
+	  //int fd = obtain_arguments(args+1);
+	  //tell(*(args+1));
       break;
     case SYS_CLOSE:
-	  obtain_arguments(args+1);
-	  close(*(args+1));
+	  //int fd = obtain_arguments(args+1);
+	  //close(fd);
       break;	
   }
   thread_exit ();
-}
-
-void * obtain_arguments(const void *vaddr) {
-	void *ptr = pagedir_get_page(thread_current()->pagedir, vaddr);
-	if (!ptr)
-	{
-		exit(-1);
-		return 0;
-	}
-	return ptr;
 }
 
 /*Terminates Pintos by calling shutdown_power_off()*/
