@@ -31,7 +31,7 @@ process_execute (const char *file_name)
 {
   char *fn_copy;
   tid_t tid;
-printf("AAAAAAAAAAAAAAAAAAA");
+printf("AAAABEGINNING");
    fn_copy = palloc_get_page (0);
   if (fn_copy == NULL)
     return TID_ERROR;
@@ -453,16 +453,93 @@ setup_stack (const char * file_name, void **esp)
   bool success = false;
   char *save_ptr;
   char *fname;
+  int size = 0;
   kpage = palloc_get_page (PAL_USER | PAL_ZERO);
   if (kpage != NULL) 
     {
       success = install_page (((uint8_t *) PHYS_BASE) - PGSIZE, kpage, true);
       if (success)
-        *esp = PHYS_BASE;
+		*esp = PHYS_BASE - 12;
       else
         palloc_free_page (kpage);
     }
+	
   char *token;
+  char *temp = malloc(strlen(file_name)+1);
+  strlcpy(temp, file_name, strlen(file_name)+1);
+  int argc = 0, i;
+  for(token = strtok_r(temp, " ", &save_ptr); token != NULL; token = strtok_r(NULL, " ", &save_ptr)){
+	  argc++;
+  }
+  int *argv = calloc(argc, sizeof(int));
+  for(token = strtok_r(file_name, " ", &save_ptr), i = 0; token != NULL; token = strtok_r(NULL, " ", &save_ptr), i++){
+	  printf("\nTOK: %s",token);
+	  argv[i] = token;
+	  //argv[i] = strlcat(token, "\0", strlen(token)+2);
+  }
+  int k = argc;
+  while(k > 0){
+	  printf("\nA: %s - %d",argv[k-1],k-1);
+	  size += strlen(argv[k-1]) + 1;
+	  *esp -= strlen(argv[k-1]) + 1;
+	  memcpy(*esp, argv[k-1], strlen(argv[k-1]) + 1);
+	  k--;
+  }
+  printf("SIZE OF %d - %d",sizeof(char),sizeof(int));
+  int cnt = (int)*esp%4;
+  char * chzero = 0;
+  int intzero = 0;
+	  size += cnt;
+  while(cnt > 0){
+	  *esp -= sizeof(char);
+	  memcpy(*esp, 0, 1);
+	  cnt--;
+  }
+  size += sizeof(int);
+  *esp -= sizeof(int);
+  memcpy(*esp, &intzero, sizeof(int));
+  size += sizeof(int);
+  
+  cnt = 0;
+  k = argc;
+  while(k > 1){
+	  *esp -= sizeof(char*);
+		size += sizeof(char*);
+	  memcpy(*esp, &argv[k-1], strlen(argv[k-1]) + 1);
+	  k--;
+  }
+  *esp -= sizeof(char**);
+  memcpy(*esp, &argv[0], sizeof(char**));
+  size += sizeof(char**);
+  
+  size += sizeof(int);
+  *esp -= sizeof(int);
+  memcpy(*esp, &argc, sizeof(int));
+  
+  
+  
+  //void * point = NULL;
+  //*esp -= sizeof(point);
+  //memcpy(*esp, &point, sizeof(point));
+  /*
+  *esp -= sizeof(argc);
+  cnt = (int)*esp%4;
+  while(cnt > 0){
+	  *esp -= 1;
+	  memset(*esp, 0, 1);
+	  cnt--;
+  }*/
+  /*void * point = NULL;
+  *esp -= sizeof(point);
+  memcpy(*esp, &point, sizeof(point));*/
+	
+	
+
+  printf("\n");
+  hex_dump(0, *esp, size, 1);
+	hex_dump((int)*esp+size, *esp, size, 1);
+	hex_dump((uintptr_t)*esp, *esp, sizeof(char) * 8, true);
+  /*char *token;
   int argc = 0,i;
   char *temp = malloc(strlen(file_name)+1);
   strlcpy(temp, file_name, strlen(file_name)+1);
@@ -504,11 +581,10 @@ setup_stack (const char * file_name, void **esp)
   memcpy(*esp,&argc,sizeof(int));
 
   *esp-=sizeof(int);
-  memcpy(*esp,&zero,sizeof(int));
+  memcpy(*esp,&zero,sizeof(int));*/
 
   free(temp);
   free(argv);
-	hex_dump((uintptr_t)*esp, *esp, sizeof(char) * 8, true);
 
   return success;
 }
