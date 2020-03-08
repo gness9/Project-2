@@ -1,5 +1,6 @@
 #include "userprog/process.h"
 #include <debug.h>
+#include <stddef.h>
 #include <inttypes.h>
 #include <round.h>
 #include <stdio.h>
@@ -17,7 +18,6 @@
 #include "threads/palloc.h"
 #include "threads/thread.h"
 #include "threads/vaddr.h"
-#include <stddef.h>
 
 static thread_func start_process NO_RETURN;
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
@@ -158,10 +158,10 @@ process_exit (void)
     int exit_code = cur->exit_error;
     printf("%s: exit(%d)\n",cur->name,exit_code);
 
-    acquire_filesys_lock();
+    //acquire_filesys_lock();
     file_close(thread_current()->self);
     close_all_files(&thread_current()->files);
-    release_filesys_lock();
+    //release_filesys_lock();
 
   
   /* Destroy the current process's page directory and switch back
@@ -282,7 +282,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
   bool success = false;
   int i;
 
-  acquire_filesys_lock();
+  //acquire_filesys_lock();
   /* Allocate and activate page directory. */
   t->pagedir = pagedir_create ();
   if (t->pagedir == NULL)
@@ -394,7 +394,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
   
  done:
   /* We arrive here whether the load is successful or not. */
- release_filesys_lock();
+ //release_filesys_lock();
   return success;
 }
 
