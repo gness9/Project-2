@@ -42,7 +42,7 @@ syscall_handler (struct intr_frame *f UNUSED)
     exit(-1);
   }
   
-  int * args = f->esp;
+  //int * args = f->esp;
   
   switch(*(int*)f->esp) 
   {
@@ -54,7 +54,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 	  exit(status);
       break;
     case SYS_EXEC: ;
-	  const char * cmd_line = (const*)(*((char*)f->esp+1));
+	  const char * cmd_line = *((char*)f->esp+1);
 	  f->eax = exec(cmd_line);
       break;
     case SYS_WAIT: ;
