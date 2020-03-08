@@ -4,6 +4,7 @@
 #include <debug.h>
 #include <list.h>
 #include <stdint.h>
+#include "synch.h"
 
 /* States in a thread's life cycle. */
 enum thread_status
@@ -92,7 +93,7 @@ struct thread
     long toExpire;
     struct list_elem telem;
 	
-	int exit_status;
+	//int exit_status;
 	struct list child_list;
 	struct semaphore *hold;
 	struct list_elem celem;
