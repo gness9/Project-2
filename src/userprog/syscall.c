@@ -17,7 +17,8 @@ static void syscall_handler (struct intr_frame *);
 struct entry_file * obtain_file(int fd);
 void * obtain_arguments(const void *vaddr);
 
-/* lock makes sure that file system accesss only has one process at a time */
+/* lock makes sure that file system accesss only has one process at a time 
+STILL NEEDS TO BE IMPLEMENTED*/
 /*struct lock locking_file;*/
 
 struct entry_file {
@@ -34,6 +35,10 @@ syscall_init (void)
   intr_register_int (0x30, 3, INTR_ON, syscall_handler, "syscall");
 }
 
+/*Implement  the  system  call  handler  in userprog/syscall.c.  
+The  skeleton  implementation  we  provide  "handles" system  calls  by  terminating  the  process.  
+It  will  need  to  retrieve  the  system  call  number,  
+then  any  system  call arguments, and carry out appropriate actions.*/
 static void
 syscall_handler (struct intr_frame *f UNUSED) 
 {
@@ -113,7 +118,8 @@ void halt (void)
 	shutdown_power_off();
 }
 
-/*Currently giving large warnings*/
+/*Terminates the current user program, returning statusto the kernel. 
+If the process's parent waits for it (see below), this is the status that will be returned.*/
 void exit(int status) 
 {
 	thread_current()->status_exit = status;
@@ -121,7 +127,8 @@ void exit(int status)
 	thread_exit ();
 }
 
-
+/*Runs the  executable  whose name  is given in cmd_line, passing any given arguments, 
+and returns the new process's  program  id (pid). */
 pid_t exec (const char * file)
 {
 	if(!file)
@@ -133,25 +140,33 @@ pid_t exec (const char * file)
 }
 
 
+/*Waits for a child process pidand retrieves the child's exit status. 
+If pidis still alive, waits until it terminates. Then, returns the  status that pidpassed to exit.*/
 int wait(pid_t pid)
 {
 	return process_wait(pid);
 }
 
+/*Creates a  new file called fileinitially initial_sizebytes in size. 
+Returns true  if successful,  false otherwise. Creating  a  new  file  does  not  open  it:  
+opening  the  new  file  is  a  separate  operation  which  would  require  a opensystem call. */
 bool create (const char *file, unsigned initial_size)
 {
 	bool file_create = filesys_create(file, initial_size);
 	return file_create;
 } 
 
-
+/*Deletes the file called file. Returns true if successful, false otherwise. 
+A file may be removed regardless of whether it is open or closed, 
+and removing an open file does not close it. See Removing an Open File, for details. */
 bool remove (const char *file) 
 {
 	bool file_remove = filesys_remove(file);
 	return file_remove;
 }
 
-
+/*Opens  the  file  called file.  Returns  a  nonnegative  integer  handle 
+called  a  "file  descriptor"  (fd),  or -1  if  the file could not be opened. */
 /* int open(const char *file) 
 {
 	
@@ -159,6 +174,7 @@ bool remove (const char *file)
 	
 } */
 
+/*Returns the size, in bytes, of the file open as fd. */
 int filesize (int fd) 
 {
 	struct entry_file *ef = obtain_file(fd);
@@ -170,8 +186,8 @@ int filesize (int fd)
 	return -1;
 }
 
-
-
+/*Reads sizebytes from the file open as fdinto buffer. Returns the number of 
+bytes actually read (0 at end of file),  or -1  if  the  file  could  not  be  read 
 /* int read(int fd, void *buffer, unsigned size) 
 {
 	
@@ -179,8 +195,8 @@ int filesize (int fd)
 	
 } */
 
-
-
+/*Writes sizebytes from bufferto the open file fd. Returns the number of bytes actually written, 
+which may be less than sizeif some bytes could not be written. */
 /* int write(int fd, const void *buffer, unsigned size) 
 {
 	
@@ -228,10 +244,7 @@ tell (int fd)
 	
 	return -1;
 	
-} 
-
-
-
+}
 
 /*Closes file descriptor fd. Exiting or terminating a process implicitly closes all its open file descriptors, as if
 by calling this function for each one. */
@@ -258,6 +271,7 @@ close (int fd)
 
 }
 
+/*Based on the file descriptor, gets a file from the list of files*/
 struct entry_file * obtain_file(int fd) {
 	
 	struct list_elem * el;
