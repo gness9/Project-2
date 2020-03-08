@@ -77,23 +77,23 @@ syscall_handler (struct intr_frame *f UNUSED)
       break;
     case SYS_OPEN: ;
 	  //char * file_open = (char*)(*((int*)f->esp+1));
-	  //f->eax = open(file_open);
+	  f->eax = open(file_open);
       break;
     case SYS_FILESIZE: ;
 	  int fd_fs = *((int*)f->esp+1);
 	  f->eax = filesize(fd_fs);
       break;
     case SYS_READ: ;
-	  //int fd_r = *((int*)f->esp+1);
-	  //void * buffer_r = (void*)(*((int*)f->esp+2));
-      //unsigned size_r = *((unsigned*)f->esp+3);
-      //f->eax = read(fd_r, buffer_r, size_r);
+	  int fd_r = *((int*)f->esp+1);
+	  void * buffer_r = (void*)(*((int*)f->esp+2));
+      unsigned size_r = *((unsigned*)f->esp+3);
+      f->eax = read(fd_r, buffer_r, size_r);
 	  break;
     case SYS_WRITE: ;
-	  //int fd_w = *((int*)f->esp+1);
-	  //void * buffer_w = (void*)(*((int*)f->esp+2));
-      //unsigned size_w = *((unsigned*)f->esp+3);
-	  //f->eax = open(fd_w, buffer_w, size_w);
+	  int fd_w = *((int*)f->esp+1);
+	  void * buffer_w = (void*)(*((int*)f->esp+2));
+      unsigned size_w = *((unsigned*)f->esp+3);
+	  f->eax = write(fd_w, buffer_w, size_w);
       break;
     case SYS_SEEK: ;
 	  int fd_s = *((int*)f->esp+1);
@@ -167,12 +167,23 @@ bool remove (const char *file)
 
 /*Opens  the  file  called file.  Returns  a  nonnegative  integer  handle 
 called  a  "file  descriptor"  (fd),  or -1  if  the file could not be opened. */
-/* int open(const char *file) 
+int open(const char *file) 
 {
-	
-	
-	
-} */
+	/* Semaphore/lock should go here */
+	struct file* openedFile = filesys_open(file);
+	if (openedFile == NULL)
+	{
+		// Release lock
+		return -1;
+	}
+	struct entry_file* processFile = malloc(sizeof(*processFile));
+	processFile->addr_file = file;
+	processFile->des_file = thread_current()->fd_count;
+	thread_current()->fd_count++;
+	list_push_front(&thread_current()->filedes_list, &processFile->element_file);
+	/* Release all locks here */
+	return processFile->des_file;
+}
 
 /*Returns the size, in bytes, of the file open as fd. */
 int filesize (int fd) 
@@ -188,22 +199,51 @@ int filesize (int fd)
 
 /*Reads sizebytes from the file open as fdinto buffer. Returns the number of 
 bytes actually read (0 at end of file),  or -1  if  the  file  could  not  be  read */
-/* int read(int fd, void *buffer, unsigned size) 
+int read(int fd, void *buffer, unsigned size) 
 {
-	
-	
-	
-} */
+	struct list_elem *e;
+
+	if (fd == 0)
+	{
+		return (int) input_getc();
+	}
+
+	for (e = list_begin (&thread_current()->filedes_list); e != list_end (&thread_current()->filedes_list);
+		e = list_next (e))
+	{
+		struct entry_file *f = list_entry (e, struct entry_file, element_file);
+		if (f->des_file == fd)
+		{
+			int bytes_read = (int) file_read(f->addr_file, buffer, size);
+			return bytes_read;
+		}
+	}
+	return -1;
+}
 
 /*Writes sizebytes from bufferto the open file fd. Returns the number of bytes actually written, 
 which may be less than sizeif some bytes could not be written. */
-/* int write(int fd, const void *buffer, unsigned size) 
+int write(int fd, const void *buffer, unsigned size) 
 {
-	
-	
-	
-	
-} */
+	struct list_elem *e;
+
+	if (fd == 1)
+	{
+		return (int) putbuf(fd, size);
+	}
+
+	for (e = list_begin (&thread_current()->filedes_list); e != list_end (&thread_current()->filedes_list);
+	e = list_next (e))
+	{
+		struct entry_file *f = list_entry (e, struct entry_file, element_file);
+		if (f->des_file == fd)
+		{
+			int bytes_written = (int) file_write(f->addr_file, buffer, size);
+			return bytes_written;
+		}
+	}
+	return 0;
+}
 
 /*Changes  the  next  byte  to  be read  or  written  in  open  file fdto position,  
 expressed  in  bytes  from  the beginning of the file. (Thus, a positionof 0 is the file's start.) */

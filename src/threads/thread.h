@@ -99,7 +99,7 @@ struct thread
 
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
-	
+    int fd_count;	
 	/*List to keep track of all file descriptors assigned to a particular thread*/
 	struct list filedes_list;
 	
