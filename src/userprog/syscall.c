@@ -71,7 +71,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 	  f->eax = remove(file_remove);
       break;
     case SYS_OPEN: ;
-	  char * file_open = (char*)(*((int*)f->esp+1));
+	  //char * file_open = (char*)(*((int*)f->esp+1));
 	  //f->eax = open(file_open);
       break;
     case SYS_FILESIZE: ;
@@ -93,7 +93,7 @@ syscall_handler (struct intr_frame *f UNUSED)
     case SYS_SEEK: ;
 	  int fd_s = *((int*)f->esp+1);
 	  unsigned position = *((unsigned*)f->esp+2);
-	  f->eax = seek(fd_s, position);
+	  seek(fd_s, position);
       break;
     case SYS_TELL: ;
 	  int fd_t = *((int*)f->esp+1);
