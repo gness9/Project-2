@@ -225,75 +225,32 @@ syscall_handler (struct intr_frame *f UNUSED)
 		}
 }
 
-/* Terminates Pintos, shutting it down entirely (bummer). */
+/*Terminates Pintos by calling shutdown_power_off()*/
 void halt (void)
 {
 	shutdown_power_off();
 }
 
-/* Terminates the current user program. It's exit status is printed,
-   and its status returned to the kernel. */
-void exit (int status)
+/*Terminates the current user program, returning statusto the kernel. 
+If the process's parent waits for it (see below), this is the status that will be returned.*/
+void exit(int status) 
 {
-	thread_current()->exit_status = status;
+	thread_current()->status_exit = status;
 	printf("%s: exit(%d)\n", thread_current()->name, status);
-  thread_exit ();
+	thread_exit ();
 }
 
-/* Writes LENGTH bytes from BUFFER to the open file FD. Returns the number of bytes actually written,
- which may be less than LENGTH if some bytes could not be written. */
-int write (int fd, const void *buffer, unsigned length)
-{
-  /* list element to iterate the list of file descriptors. */
-  struct list_elem *temp;
-
-  lock_acquire(&lock_filesys);
-
-  /* If fd is equal to one, then we write to STDOUT (the console, usually). */
-	if(fd == 1)
-	{
-		putbuf(buffer, length);
-    lock_release(&lock_filesys);
-    return length;
-	}
-  /* If the user passes STDIN or no files are present, then return 0. */
-  if (fd == 0 || list_empty(&thread_current()->file_descriptors))
-  {
-    lock_release(&lock_filesys);
-    return 0;
-  }
-
-  /* Check to see if the given fd is open and owned by the current process. If so, return
-     the number of bytes that were written to the file. */
-  for (temp = list_front(&thread_current()->file_descriptors); temp != NULL; temp = temp->next)
-  {
-      struct thread_file *t = list_entry (temp, struct thread_file, file_elem);
-      if (t->file_descriptor == fd)
-      {
-        int bytes_written = (int) file_write(t->file_addr, buffer, length);
-        lock_release(&lock_filesys);
-        return bytes_written;
-      }
-  }
-
-  lock_release(&lock_filesys);
-
-  /* If we can't write to the file, return 0. */
-  return 0;
-}
-
-/* Executes the program with the given file name. */
+/*Runs the  executable  whose name  is given in cmd_line, passing any given arguments, 
+and returns the new process's  program  id (pid). */
 pid_t exec (const char * file)
 {
-  /* If a null file is passed in, return a -1. */
 	if(!file)
 	{
 		return -1;
 	}
-  lock_acquire(&lock_filesys);
-  /* Get and return the PID of the process that is created. */
+	lock_acquire(&lock_filesys);
 	pid_t child_tid = process_execute(file);
-  lock_release(&lock_filesys);
+	lock_release(&lock_filesys);
 	return child_tid;
 }
 
@@ -426,6 +383,48 @@ int read (int fd, void *buffer, unsigned length)
 
   /* If we can't read from the file, return -1. */
   return -1;
+}
+
+/* Writes LENGTH bytes from BUFFER to the open file FD. Returns the number of bytes actually written,
+ which may be less than LENGTH if some bytes could not be written. */
+int write (int fd, const void *buffer, unsigned length)
+{
+  /* list element to iterate the list of file descriptors. */
+  struct list_elem *temp;
+
+  lock_acquire(&lock_filesys);
+
+  /* If fd is equal to one, then we write to STDOUT (the console, usually). */
+	if(fd == 1)
+	{
+		putbuf(buffer, length);
+    lock_release(&lock_filesys);
+    return length;
+	}
+  /* If the user passes STDIN or no files are present, then return 0. */
+  if (fd == 0 || list_empty(&thread_current()->file_descriptors))
+  {
+    lock_release(&lock_filesys);
+    return 0;
+  }
+
+  /* Check to see if the given fd is open and owned by the current process. If so, return
+     the number of bytes that were written to the file. */
+  for (temp = list_front(&thread_current()->file_descriptors); temp != NULL; temp = temp->next)
+  {
+      struct thread_file *t = list_entry (temp, struct thread_file, file_elem);
+      if (t->file_descriptor == fd)
+      {
+        int bytes_written = (int) file_write(t->file_addr, buffer, length);
+        lock_release(&lock_filesys);
+        return bytes_written;
+      }
+  }
+
+  lock_release(&lock_filesys);
+
+  /* If we can't write to the file, return 0. */
+  return 0;
 }
 
 
