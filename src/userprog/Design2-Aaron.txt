@@ -1,16 +1,16 @@
-		           +--------------------------+
-				   |         CIS 520          |
-		           | PROJECT 2: USER PROGRAMS |
-		           |     DESIGN DOCUMENT      |
-		           +--------------------------+
+                   +--------------------------+
+                   |         CIS 520          |
+                   | PROJECT 2: USER PROGRAMS |
+                   |     DESIGN DOCUMENT      |
+                   +--------------------------+
 
 ---- GROUP ----
 
 >> Fill in the names of your group members.
 
-FirstName LastName
-FirstName LastName
-FirstName LastName
+Aaron Simpson
+Zayin Brunson
+Glenn Ness
 
 ---- PRELIMINARIES ----
 
@@ -21,8 +21,13 @@ FirstName LastName
 >> preparing your submission, other than the Pintos documentation, course
 >> text, lecture notes, and course staff.
 
-			   ARGUMENT PASSING
-			   ================
+We primarily consulted a mix of these:
+https://github.com/Waqee/Pintos-Project-2/
+https://github.com/ChristianJHughes/pintos-project2/
+
+
+               ARGUMENT PASSING
+               ================
 
 ---- DATA STRUCTURES ----
 
@@ -30,37 +35,81 @@ FirstName LastName
 >> `struct' member, global or static variable, `typedef', or
 >> enumeration.  Identify the purpose of each in 25 words or less.
 
+Thread.h
+>> int exit_status; Used to know what the exit status of the thread is.
+>> struct list child_list; Used to keep a list of all processes relying on some process to finish running.
+>> struct semaphore hold; Used to keep the parent thread from finishing execution.
+>> struct list_elem celem; Child Element: Used for the child_list.
+
+
+
 ---- ALGORITHMS ----
 
 >> A2: Briefly describe how you implemented argument parsing.  How do
 >> you arrange for the elements of argv[] to be in the right order?
 >> How do you avoid overflowing the stack page?
 
+When we try to execute a program with arguments without argument passing implemented, we end up passing the file name and all arguments as if it's the entire file name. The thread creation function cannot access that file as it doesn't exist. We need to split the entire string around the program name and the arguments. strtok_r is a function that allows us to split around spaces. The first string is the program name and all the rest are arguments. This split is performed in process_execute(), load(), and setup_stack()
+
+In setup_stack(), we define the integer variable argc to count the total number of arguments. We use this later when we push the actual arguments to the stack in reverse, so we know how many arguments there are in total. argv is allocated enough memory space to hold the addresses of each argument, then we push the arguments themselves onto the stack, making sure to store each address in argv. Afterwards, we word align the stack to 4-bytes, write the addresses of each of the arguments to the stack, the number of arguments, and a null pointer.
+
+Overflow:
+In setup_stack(), we sum the size of each argument, plus a null character, of argv. Then we compare it to the stack page size. If the summation is greater than the page size, we return !success and free argv from holding values.
+
 ---- RATIONALE ----
 
 >> A3: Why does Pintos implement strtok_r() but not strtok()?
+The 'r' in strtok_r() stands for re-entrant, meaning that the function can be interrupted in the midst of its execution and resumed later through save_ptr variable. The reason for this is that user programs in Pintos are single threaded and multiple threads may be calling the same function at the same time, get put to sleep, etc. In other words, strtok() is not a thread-safe function.
 
 >> A4: In Pintos, the kernel separates commands into an executable name
 >> and arguments.  In Unix-like systems, the shell does this
->> separation.  Identify at least two advantages of the Unix approach.
+>> separation.  Identify at least two advantages of the Unix approach
+.
+- One advantage of having the shell separate the commands is saving on
+  kernel complexity. A job handled in user space doesn't have to be taken
+  care of by the kernel, allowing it to be smaller and simpler.
+- Another advantage could be security, as having the shell handle this task
+  and being a userspace program adds a barrier of security and protection
+  to keep kernel memory safer.
 
-			     SYSTEM CALLS
-			     ============
+                 SYSTEM CALLS
+                 ============
 
 ---- DATA STRUCTURES ----
 
 >> B1: Copy here the declaration of each new or changed `struct' or
 >> `struct' member, global or static variable, `typedef', or
 >> enumeration.  Identify the purpose of each in 25 words or less.
+     
+Syscall.c
+>>struct entry_file - Represents a file in a process. Has the fd,
+    a pointer to the file, and a list element for storing the file in
+    the thread file list
+Thread.h
+>>struct thread - Added a counter for the fd's in a process, as well as
+    to store a list of the open files.
+>>struct thread - added a struct list file_descriptors 
+
 
 >> B2: Describe how file descriptors are associated with open files.
 >> Are file descriptors unique within the entire OS or just within a
 >> single process?
 
+File descriptors are unique within a single process as they are a property
+local to the thread struct in thread.h. The reason for a file descriptor
+being process-unique rather than unique within the entire OS is that
+it's possible for a file to be opened more than once by the same
+process or a different process. Thus, the processes themselves must keep
+track of the files they open and close.
+
 ---- ALGORITHMS ----
 
 >> B3: Describe your code for reading and writing user data from the
 >> kernel.
+
+In writing we would first see if the output is standard. If the input is standard and file descriptor is 1 we would write the buffer to console using putbuf. Else if the file descriptor is 0 we would read input from the keyboard, and return size. We also would need to find the file from the list of files with the matching file descriptor. Finally, we would write to file using file_write from file.c, and also return a total number of bytes.
+
+For reading, we would check to see if the file descriptor is 0 with the reading input being standard. If the check finds this to be true, we would read input from the keyboard and return size while also checking for other file descriptors.  Other file descriptors are checked by retrieving them from the file descriptor list. If file cannot be read we return -1, otherwise we will read from the file using file_read which is also provided in file.c
 
 >> B4: Suppose a system call causes a full page (4,096 bytes) of data
 >> to be copied from user space into the kernel.  What is the least
@@ -69,8 +118,16 @@ FirstName LastName
 >> for a system call that only copies 2 bytes of data?  Is there room
 >> for improvement in these numbers, and how much?
 
+4,096 would be the greatest and least number of calls to the page table. The least and greatest number of inspections for 2 bytes would be 2. This could be improved by having multiple bytes being read during every call.  This new implementation would make min inspections be 1 with max being 2 during the case of splitting between multiple pages.
+
 >> B5: Briefly describe your implementation of the "wait" system call
 >> and how it interacts with process termination.
+
+The wait system call calls the function process_wait() in process.c with
+a given child thread ID. In process_wait(), the parent searches through its
+list of child processes until it finds the correct one (returning -1 if it
+does not exist) and is put to sleep until that child finishes its execution
+and terminates, allowing the parent to continue.
 
 >> B6: Any access to user program memory at a user-specified address
 >> can fail due to a bad pointer value.  Such accesses must cause the
@@ -86,12 +143,24 @@ FirstName LastName
 >> paragraphs, describe the strategy or strategies you adopted for
 >> managing these issues.  Give an example.
 
+One way of ensuring ths is through the proper separation of necessary
+functionality into functions. For example, by separating the logic to perform
+actual file writing into a function called write(), you can leave error-handling measures
+like pointer validation to the syscall code selection logic. Validate pointers
+before, call a function to perform the primary work, then return from that function.
+Looking at syscall handler, it's also clear to see that we validate at multiple
+steps of the way. For example, we start by validating the stack pointer first
+before even entering the system call handler. Then, everytime we add one and move
+to the next argument, we validate that as well.
+
 ---- SYNCHRONIZATION ----
 
 >> B7: The "exec" system call returns -1 if loading the new executable
 >> fails, so it cannot return before the new executable has completed
 >> loading.  How does your code ensure this?  How is the load
 >> success/failure status passed back to the thread that calls "exec"?
+
+The primary way our code ensures this is through the use of synchronization primitives. We acquire a lock before calling process_execute on our loaded executable file. The load success/failure status is stored as the child thread id that process_execute returns. It isn’t until after process_execute returns that we release the lock, ensuring that it cannot return until the new executable has completed.
 
 >> B8: Consider parent process P with child process C.  How do you
 >> ensure proper synchronization and avoid race conditions when P
@@ -100,19 +169,26 @@ FirstName LastName
 >> terminates without waiting, before C exits?  After C exits?  Are
 >> there any special cases?
 
+
+
 ---- RATIONALE ----
 
 >> B9: Why did you choose to implement access to user memory from the
 >> kernel in the way that you did?
+The stack pointer in memory is laid out as an integer that represents the system code and below that pointers to arguments. Handling this in the syscall is simple as we can just increment the stack pointer to get the arguments and handle them in the individual syscall cases.
 
 >> B10: What advantages or disadvantages can you see to your design
 >> for file descriptors?
 
+The main design for handling file descriptors was the entry_file struct which helped make a very efficient way to dispose and obtain new fd’s (file descriptors). A drawback or disadvantage could be the extra space this structure would require. The main advantage of this method was that each file was mapped to its own fd.
+
 >> B11: The default tid_t to pid_t mapping is the identity mapping.
 >> If you changed it, what advantages are there to your approach?
 
-			   SURVEY QUESTIONS
-			   ================
+There were no changes made from tid_t to pid_t mapping
+
+               SURVEY QUESTIONS
+               ================
 
 Answering these questions is optional, but it will help us improve the
 course in future quarters.  Feel free to tell us anything you
@@ -122,15 +198,20 @@ the quarter.
 
 >> In your opinion, was this assignment, or any one of the three problems
 >> in it, too easy or too hard?  Did it take too long or too little time?
+- A little on the difficult end, but I found portions of it easier than the synchronization project.
 
 >> Did you find that working on a particular part of the assignment gave
 >> you greater insight into some aspect of OS design?
+I did actually find that working on the stack portion gave me some interesting insight into how user programs manage their data.
 
 >> Is there some particular fact or hint we should give students in
 >> future quarters to help them solve the problems?  Conversely, did you
 >> find any of our guidance to be misleading?
+Just earlier access to the Pintos Squarespace would be helpful
 
 >> Do you have any suggestions for the TAs to more effectively assist
 >> students, either for future quarters or the remaining projects?
 
 >> Any other comments?
+
+
