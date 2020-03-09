@@ -133,10 +133,10 @@ syscall_handler (struct intr_frame *f UNUSED)
 				validate_address((const void *) stack_pointer);
 				args[i] = *(int *)stack_pointer;
 			}
-			(char *)stack_pointer = (char * )args[1];
+			char * stack_pointer_r = (char * )args[1];
 			for (int i = 0; i < args[2]; i++) {
-				validate_address((const void *) stack_pointer);
-				stack_pointer++;
+				validate_address((const void *) stack_pointer_r);
+				stack_pointer_r++;
 			}
 			virt_page = pagedir_get_page(thread_current()->pagedir, (const void *) args[1]);
 			if (virt_page == NULL) {
@@ -151,10 +151,10 @@ syscall_handler (struct intr_frame *f UNUSED)
 				validate_address((const void *) stack_pointer);
 				args[i] = *(int *)stack_pointer;
 			}
-			(char *)stack_pointer = (char * )args[1];
+			char * stack_pointer_w = (char * )args[1];
 			for (int i = 0; i < args[2]; i++) {
-				validate_address((const void *) stack_pointer);
-				stack_pointer++;
+				validate_address((const void *) stack_pointer_w);
+				stack_pointer_w++;
 			}
 			virt_page = pagedir_get_page(thread_current()->pagedir, (const void *) args[1]);
 			if (virt_page == NULL) {
