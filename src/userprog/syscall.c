@@ -133,7 +133,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 				validate_address((const void *) stack_pointer);
 				args[i] = *(int *)stack_pointer;
 			}
-			char *stack_pointer = (char * )args[1];
+			(char *)stack_pointer = (char * )args[1];
 			for (int i = 0; i < args[2]; i++) {
 				validate_address((const void *) stack_pointer);
 				stack_pointer++;
@@ -151,7 +151,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 				validate_address((const void *) stack_pointer);
 				args[i] = *(int *)stack_pointer;
 			}
-			char *stack_pointer = (char * )args[1];
+			(char *)stack_pointer = (char * )args[1];
 			for (int i = 0; i < args[2]; i++) {
 				validate_address((const void *) stack_pointer);
 				stack_pointer++;
