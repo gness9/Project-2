@@ -61,7 +61,7 @@ syscall_handler (struct intr_frame *f UNUSED)
   switch(system_call) 
   {
     case SYS_HALT:
-	  printf("\nFAILED ALL14");
+	  printf("\nFAILED ALL");
 	  halt();
       break;
     case SYS_EXIT: ;
@@ -71,12 +71,12 @@ syscall_handler (struct intr_frame *f UNUSED)
 	  exit(status);
       break;
     case SYS_EXEC: ;
-	  printf("\nFAILED ALL13");
+	  printf("\nFAILED ALL4");
 	  char * cmd_line = (char*)(*((int*)f->esp+1));
 	  f->eax = exec(cmd_line);
       break;
     case SYS_WAIT: ;
-	  printf("\nFAILED ALL12");
+	  printf("\nFAILED ALL3");
 	  pid_t pid = *((pid_t*)f->esp+1);
 	  f->eax = wait(pid);
       break;
@@ -113,7 +113,6 @@ syscall_handler (struct intr_frame *f UNUSED)
 	  int fd_w = *((int*)f->esp+1);
 	  void * buffer_w = (void*)(*((int*)f->esp+2));
       unsigned size_w = *((unsigned*)f->esp+3);
-	  printf("\nCREATED VARIABLES");
 	  f->eax = write(fd_w, buffer_w, size_w);
       break;
     case SYS_SEEK: ;
