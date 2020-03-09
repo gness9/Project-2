@@ -316,64 +316,62 @@ int open(const char *file)
   return fd;
 }
 
-/* Returns the size, in bytes, of the file open as fd. */
-int filesize (int fd)
+/*Returns the size, in bytes, of the file open as fd. */
+int filesize (int fd) 
+{
+	lock_acquire(&lock_filesys);
+	struct entry_file *ef = obtain_file(fd);
+	if(ef->addr_file != NULL)
+	{
+		int file_size = file_length(ef->addr_file);
+		lock_release(&lock_filesys);
+		return file_size;
+	}
+	lock_release(&lock_filesys);
+	return -1;
+}
+
+/* Reads size bytes from the file open as fd into buffer. Returns the number of bytes actually read
+   (0 at end of file), or -1 if the file could not be read (due to a condition other than end of file).
+   Fd 0 reads from the keyboard using input_getc(). */
+int read (int fd, void *buffer, unsigned length)
 {
   /* list element to iterate the list of file descriptors. */
   struct list_elem *temp;
 
   lock_acquire(&lock_filesys);
 
-  /* If there are no files associated with this thread, return -1 */
-  if (list_empty(&thread_current()->file_descriptors))
+  /* If fd is one, then we must get keyboard input. */
+  if (fd == 0)
   {
     lock_release(&lock_filesys);
-    return -1;
+    return (int) input_getc();
   }
 
-  /* Check to see if the given fd is open and owned by the current process. If so, return
-     the length of the file. */
+  /* We can't read from standard out, or from a file if we have none open. */
+  if (fd == 1 || list_empty(&thread_current()->file_descriptors))
+  {
+    lock_release(&lock_filesys);
+    return 0;
+  }
+
+  /* Look to see if the fd is in our list of file descriptors. If found,
+     then we read from the file and return the number of bytes written. */
   for (temp = list_front(&thread_current()->file_descriptors); temp != NULL; temp = temp->next)
   {
       struct thread_file *t = list_entry (temp, struct thread_file, file_elem);
       if (t->file_descriptor == fd)
       {
         lock_release(&lock_filesys);
-        return (int) file_length(t->file_addr);
+        int bytes = (int) file_read(t->file_addr, buffer, length);
+        return bytes;
       }
   }
 
   lock_release(&lock_filesys);
 
-  /* Return -1 if we can't find the file. */
+  /* If we can't read from the file, return -1. */
   return -1;
-}
-
-/*Reads sizebytes from the file open as fdinto buffer. Returns the number of 
-bytes actually read (0 at end of file),  or -1  if  the  file  could  not  be  read */
-int read(int fd, void *buffer, unsigned size) 
-{
-	struct list_elem *e;
-
-	lock_acquire(&lock_filesys);
-
-	if (fd == 0)
-	{
-		lock_release(&lock_filesys);
-		return (int) input_getc();
-	}
-	
-	struct entry_file *ef = obtain_file(fd);
-	
-	if(ef->addr_file != NULL)
-	{
-		int bytes_read = (int) file_read(ef->addr_file, buffer, size);
-		lock_release(&lock_filesys);
-		return bytes_read;
-	}
-
-	lock_release(&lock_filesys);
-	return -1;
 }
 
 /* Writes LENGTH bytes from BUFFER to the open file FD. Returns the number of bytes actually written,
