@@ -430,8 +430,8 @@ int open(const char *file)
 		return -1;
 	}
 	struct entry_file* process_file = malloc(sizeof(* process_file));
-	processFile->addr_file = file;
-	processFile->des_file = thread_current()->cur_fd;
+	process_file->addr_file = file;
+	process_file->des_file = thread_current()->cur_fd;
 	thread_current()->cur_fd++;
 	list_push_front(&thread_current()->filedes_list, &process_file->element_file);
 	lock_release(&lock_filesys);
