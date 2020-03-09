@@ -349,47 +349,31 @@ int filesize (int fd)
   return -1;
 }
 
-/* Reads size bytes from the file open as fd into buffer. Returns the number of bytes actually read
-   (0 at end of file), or -1 if the file could not be read (due to a condition other than end of file).
-   Fd 0 reads from the keyboard using input_getc(). */
-int read (int fd, void *buffer, unsigned length)
+/*Reads sizebytes from the file open as fdinto buffer. Returns the number of 
+bytes actually read (0 at end of file),  or -1  if  the  file  could  not  be  read */
+int read(int fd, void *buffer, unsigned size) 
 {
-  /* list element to iterate the list of file descriptors. */
-  struct list_elem *temp;
+	struct list_elem *e;
 
-  lock_acquire(&lock_filesys);
+	lock_acquire(&lock_filesys);
 
-  /* If fd is one, then we must get keyboard input. */
-  if (fd == 0)
-  {
-    lock_release(&lock_filesys);
-    return (int) input_getc();
-  }
+	if (fd == 0)
+	{
+		lock_release(&lock_filesys);
+		return (int) input_getc();
+	}
+	
+	struct entry_file *ef = obtain_file(fd);
+	
+	if(ef->addr_file != NULL)
+	{
+		int bytes_read = (int) file_read(ef->addr_file, buffer, size);
+		lock_release(&lock_filesys);
+		return bytes_read;
+	}
 
-  /* We can't read from standard out, or from a file if we have none open. */
-  if (fd == 1 || list_empty(&thread_current()->file_descriptors))
-  {
-    lock_release(&lock_filesys);
-    return 0;
-  }
-
-  /* Look to see if the fd is in our list of file descriptors. If found,
-     then we read from the file and return the number of bytes written. */
-  for (temp = list_front(&thread_current()->file_descriptors); temp != NULL; temp = temp->next)
-  {
-      struct thread_file *t = list_entry (temp, struct thread_file, file_elem);
-      if (t->file_descriptor == fd)
-      {
-        lock_release(&lock_filesys);
-        int bytes = (int) file_read(t->file_addr, buffer, length);
-        return bytes;
-      }
-  }
-
-  lock_release(&lock_filesys);
-
-  /* If we can't read from the file, return -1. */
-  return -1;
+	lock_release(&lock_filesys);
+	return -1;
 }
 
 /* Writes LENGTH bytes from BUFFER to the open file FD. Returns the number of bytes actually written,
