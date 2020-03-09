@@ -48,7 +48,7 @@ syscall_handler (struct intr_frame *f UNUSED)
   }
   
   printf("\nCCCCCCC");
-  printf("BLARGH: %d\n", f->esp)
+  printf("BLARGH: %p\n", f->esp);
   //int * args = f->esp;
   
   switch(*(int*)f->esp) 
