@@ -42,6 +42,7 @@ then  any  system  call arguments, and carry out appropriate actions.*/
 static void
 syscall_handler (struct intr_frame *f UNUSED) 
 {
+	printf("CCCCCCCB");
   if (f->esp == NULL)
   {
     exit(-1);
