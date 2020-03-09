@@ -48,6 +48,7 @@ syscall_handler (struct intr_frame *f UNUSED)
   }
   
   printf("\nCCCCCCC");
+  printf("BLARGH: %d\n", f->esp)
   //int * args = f->esp;
   
   switch(*(int*)f->esp) 
@@ -56,6 +57,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 	  halt();
       break;
     case SYS_EXIT: ;
+	  printf("\nTEST");
 	  int status = *((int*)f->esp+1);
 	  printf("\nstatus: %d", status);
 	  exit(status);
