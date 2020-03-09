@@ -429,7 +429,7 @@ int open(const char *file)
 		// Release lock
 		return -1;
 	}
-	struct entry_file* process_file = malloc(sizeof(struct processFile));
+	struct entry_file* process_file = malloc(sizeof(struct process_file));
 	processFile->addr_file = file;
 	processFile->des_file = thread_current()->cur_fd;
 	thread_current()->cur_fd++;
