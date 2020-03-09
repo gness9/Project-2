@@ -21,7 +21,6 @@ void * obtain_arguments(const void *vaddr);
 
 /* Get up to three arguments from a programs stack (they directly follow the system
 call argument). */
->>>>>>> 500ce1ccba3cf64166c314a9ee55cafe3c778d01
 void get_stack_arguments (struct intr_frame *f, int * args, int num_of_args);
 
 /* Creates a struct to insert files and their respective file descriptor into
@@ -45,10 +44,8 @@ syscall_init (void)
   intr_register_int (0x30, 3, INTR_ON, syscall_handler, "syscall");
 }
 
-<<<<<<< HEAD
-=======
+
 /* Handles a system call initiated by a user program. */
->>>>>>> 500ce1ccba3cf64166c314a9ee55cafe3c778d01
 static void
 syscall_handler (struct intr_frame *f UNUSED)
 {
@@ -323,9 +320,7 @@ void validate_address (const void *stack_pointer)
 	}
 }
 
-=======
 /*Terminates Pintos by calling shutdown_power_off()*/
->>>>>>> 500ce1ccba3cf64166c314a9ee55cafe3c778d01
 void halt (void)
 {
 	shutdown_power_off();
@@ -350,11 +345,10 @@ pid_t exec (const char * file)
 	return child_tid;
 }
 
-<<<<<<< HEAD
-=======
+
 /*Waits for a child process pidand retrieves the child's exit status. 
 If pidis still alive, waits until it terminates. Then, returns the  status that pidpassed to exit.*/
->>>>>>> 500ce1ccba3cf64166c314a9ee55cafe3c778d01
+
 int wait(pid_t pid)
 {
 	return process_wait(pid);
@@ -400,12 +394,9 @@ int open(const char *file)
   return fd;
 }
 
-<<<<<<< HEAD
-int filesize (int fd) 
-=======
+
 /* Returns the size, in bytes, of the file open as fd. */
 int filesize (int fd)
->>>>>>> 500ce1ccba3cf64166c314a9ee55cafe3c778d01
 {
   /* list element to iterate the list of file descriptors. */
   struct list_elem *temp;
@@ -437,14 +428,11 @@ int filesize (int fd)
   return -1;
 }
 
-<<<<<<< HEAD
-int read(int fd, void *buffer, unsigned size) 
-=======
+
 /* Reads size bytes from the file open as fd into buffer. Returns the number of bytes actually read
    (0 at end of file), or -1 if the file could not be read (due to a condition other than end of file).
    Fd 0 reads from the keyboard using input_getc(). */
 int read (int fd, void *buffer, unsigned length)
->>>>>>> 500ce1ccba3cf64166c314a9ee55cafe3c778d01
 {
   /* list element to iterate the list of file descriptors. */
   struct list_elem *temp;
