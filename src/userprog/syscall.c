@@ -472,7 +472,7 @@ int read(int fd, void *buffer, unsigned size)
 	
 	if(ef->addr_file != NULL)
 	{
-		int bytes_read = (int) file_read(f->addr_file, buffer, size);
+		int bytes_read = (int) file_read(ef->addr_file, buffer, size);
 		lock_release(&lock_filesys);
 		return bytes_read;
 	}
