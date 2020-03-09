@@ -14,6 +14,7 @@
 #include "threads/malloc.h"
 
 static void syscall_handler (struct intr_frame *);
+struct entry_file * obtain_file(int fd);
 
 /* Get up to three arguments from a programs stack (they directly follow the system
 call argument). */
