@@ -574,3 +574,21 @@ void get_stack_arguments (struct intr_frame *f, int *args, int num_of_args)
       args[i] = *ptr;
     }
 }
+
+/*Based on the file descriptor, gets a file from the list of files*/
+struct entry_file * obtain_file(int fd) {
+	
+	struct list_elem * el;
+	
+	el = list_front(&thread_current()->filedes_list);
+	
+	while (el != NULL) {
+		struct entry_file *f = list_entry (el, struct entry_file, element_file);
+		if(fd == f->des_file)
+		{
+			return f;
+		}
+		el = el->next;
+	}
+	return NULL;
+}
