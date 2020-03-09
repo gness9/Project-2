@@ -19,8 +19,6 @@ static void syscall_handler (struct intr_frame *);
 call argument). */
 void get_stack_arguments (struct intr_frame *f, int * args, int num_of_args);
 
-struct entry_file * obtain_file(int fd);
-
 /* Creates a struct to insert files and their respective file descriptor into
    the file_descriptors list for the current thread. */
 struct thread_file
@@ -342,24 +340,6 @@ int filesize (int fd)
 
   /* Return -1 if we can't find the file. */
   return -1;
-}
-
-/*Based on the file descriptor, gets a file from the list of files*/
-struct entry_file * obtain_file(int fd) {
-	
-	struct list_elem * el;
-	
-	el = list_front(&thread_current()->filedes_list);
-	
-	while (el != NULL) {
-		struct entry_file *f = list_entry (el, struct entry_file, element_file);
-		if(fd == f->des_file)
-		{
-			return f;
-		}
-		el = el->next;
-	}
-	return NULL;
 }
 
 /* Reads size bytes from the file open as fd into buffer. Returns the number of bytes actually read
