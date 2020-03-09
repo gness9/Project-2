@@ -226,6 +226,34 @@ syscall_handler (struct intr_frame *f UNUSED)
 		}
 }
 
+
+/* Ensures that each memory address in a given buffer is in valid user space. */
+void check_buffer (void *buff_to_check, unsigned size)
+{
+  unsigned i;
+  char *ptr  = (char * )buff_to_check;
+  for (i = 0; i < size; i++)
+    {
+      check_valid_addr((const void *) ptr);
+      ptr++;
+    }
+}
+
+/* Code inspired by GitHub Repo created by ryantimwilson (full link in Design2.txt).
+   Get up to three arguments from a programs stack (they directly follow the system
+   call argument). */
+void get_stack_arguments (struct intr_frame *f, int *args, int num_of_args)
+{
+  int i;
+  int *ptr;
+  for (i = 0; i < num_of_args; i++)
+    {
+      ptr = (int *) f->esp + i + 1;
+      check_valid_addr((const void *) ptr);
+      args[i] = *ptr;
+    }
+}
+
 /*Implement  the  system  call  handler  in userprog/syscall.c.  
 The  skeleton  implementation  we  provide  "handles" system  calls  by  terminating  the  process.  
 It  will  need  to  retrieve  the  system  call  number,  
