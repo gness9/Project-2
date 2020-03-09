@@ -502,7 +502,7 @@ int write(int fd, const void *buffer, unsigned size)
 	
 	if(ef->addr_file != NULL)
 	{
-		int bytes_written = (int) file_write(f->addr_file, buffer, size);
+		int bytes_written = (int) file_write(ef->addr_file, buffer, size);
 		lock_release(&lock_filesys);
 		return bytes_written;
 	}
