@@ -467,18 +467,16 @@ int read(int fd, void *buffer, unsigned size)
 		lock_release(&lock_filesys);
 		return (int) input_getc();
 	}
-
-	for (e = list_begin (&thread_current()->filedes_list); e != list_end (&thread_current()->filedes_list);
-		e = list_next (e))
+	
+	struct entry_file *ef = obtain_file(fd);
+	
+	if(ef->addr_file != NULL)
 	{
-		struct entry_file *f = list_entry (e, struct entry_file, element_file);
-		if (f->des_file == fd)
-		{
-			int bytes_read = (int) file_read(f->addr_file, buffer, size);
-			lock_release(&lock_filesys);
-			return bytes_read;
-		}
+		int bytes_read = (int) file_read(f->addr_file, buffer, size);
+		lock_release(&lock_filesys);
+		return bytes_read;
 	}
+
 	lock_release(&lock_filesys);
 	return -1;
 }
