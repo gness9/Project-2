@@ -83,7 +83,7 @@ process_execute (const char *file_name)
    running. */
 static void
 start_process (void *file_name_)
-{printf("VBBBBBBBBBBBBBBBBBBBBB");
+{//printf("VBBBBBBBBBBBBBBBBBBBBB");
 	//printf("\nStart: %s\n",file_name_);
   char *file_name = file_name_;
   struct intr_frame if_;
@@ -538,7 +538,7 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
 static bool
 setup_stack (void **esp, int argc, char *argv[]) 
 {
-  printf("DDDDDDDDDDDDDDDDDDd");
+  //printf("DDDDDDDDDDDDDDDDDDd");
   uint8_t *kpage;
   bool success = false;
   //TODO
