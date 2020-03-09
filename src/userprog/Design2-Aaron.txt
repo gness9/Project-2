@@ -169,7 +169,10 @@ The primary way our code ensures this is through the use of synchronization prim
 >> terminates without waiting, before C exits?  After C exits?  Are
 >> there any special cases?
 
-
+The parent waits for its children to complete via the hold semaphore. The parent keeps a list of children. 
+If P calls wait(C) before C exits, P will wait for C until C has signaled it is done by calling sema_up when it exits.
+If P calls wait(C) after C exits, P will not wait since C has already been removed from P's list of children.
+If P terminates without waiting either before or after C exits, C will become an orphan and will never be able to signal to its parent when it is finished executing.
 
 ---- RATIONALE ----
 
