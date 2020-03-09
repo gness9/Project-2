@@ -30,12 +30,6 @@ struct thread_file
     int file_descriptor;
 };
 
-struct entry_file {
-	struct file* addr_file;
-	int des_file;
-	struct list_elem element_file;
-};
-
 /* Lock is in charge of ensuring that only one process can access the file system at one time. */
 struct lock lock_filesys;
 
@@ -317,19 +311,37 @@ int open(const char *file)
   return fd;
 }
 
-/*Returns the size, in bytes, of the file open as fd. */
-int filesize (int fd) 
+/* Returns the size, in bytes, of the file open as fd. */
+int filesize (int fd)
 {
-	lock_acquire(&lock_filesys);
-	struct entry_file *ef = obtain_file(fd);
-	if(ef->addr_file != NULL)
-	{
-		int file_size = file_length(ef->addr_file);
-		lock_release(&lock_filesys);
-		return file_size;
-	}
-	lock_release(&lock_filesys);
-	return -1;
+  /* list element to iterate the list of file descriptors. */
+  struct list_elem *temp;
+
+  lock_acquire(&lock_filesys);
+
+  /* If there are no files associated with this thread, return -1 */
+  if (list_empty(&thread_current()->file_descriptors))
+  {
+    lock_release(&lock_filesys);
+    return -1;
+  }
+
+  /* Check to see if the given fd is open and owned by the current process. If so, return
+     the length of the file. */
+  for (temp = list_front(&thread_current()->file_descriptors); temp != NULL; temp = temp->next)
+  {
+      struct thread_file *t = list_entry (temp, struct thread_file, file_elem);
+      if (t->file_descriptor == fd)
+      {
+        lock_release(&lock_filesys);
+        return (int) file_length(t->file_addr);
+      }
+  }
+
+  lock_release(&lock_filesys);
+
+  /* Return -1 if we can't find the file. */
+  return -1;
 }
 
 /*Based on the file descriptor, gets a file from the list of files*/
