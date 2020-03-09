@@ -55,7 +55,7 @@ syscall_handler (struct intr_frame *f UNUSED)
   }
   
   printf("\nCCCCCCC\n");
-  printf("BLARGH: %d, %d", *((int*)f->esp+1), SYS_WRITE);
+  printf("BLARGH: %d, %d", *((int*)f->esp+1), SYS_EXIT);
   //int * args = f->esp;
   
   switch(system_call) 
@@ -113,6 +113,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 	  int fd_w = *((int*)f->esp+1);
 	  void * buffer_w = (void*)(*((int*)f->esp+2));
       unsigned size_w = *((unsigned*)f->esp+3);
+	  printf("\nCREATED VARIABLES");
 	  f->eax = write(fd_w, buffer_w, size_w);
       break;
     case SYS_SEEK: ;
