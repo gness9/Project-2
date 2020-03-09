@@ -380,6 +380,7 @@ pid_t exec (const char * file)
 	{
 		return -1;
 	}
+	lock_acquire(&lock_filesys);
 	pid_t child_tid = process_execute(file);
 	lock_release(&lock_filesys);
 	return child_tid;
@@ -428,14 +429,14 @@ int open(const char *file)
 		// Release lock
 		return -1;
 	}
-	struct entry_file* processFile = malloc(sizeof(*processFile));
+	struct entry_file* process_file = malloc(sizeof(struct processFile));
 	processFile->addr_file = file;
-	processFile->des_file = thread_current()->fd_count;
-	thread_current()->fd_count++;
-	list_push_front(&thread_current()->filedes_list, &processFile->element_file);
+	processFile->des_file = thread_current()->cur_fd;
+	thread_current()->cur_fd++;
+	list_push_front(&thread_current()->filedes_list, &process_file->element_file);
 	lock_release(&lock_filesys);
 	/* Release all locks here */
-	return processFile->des_file;
+	return process_file->des_file;
 }
 
 /*Returns the size, in bytes, of the file open as fd. */
