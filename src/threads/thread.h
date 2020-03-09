@@ -4,7 +4,8 @@
 #include <debug.h>
 #include <list.h>
 #include <stdint.h>
-#include "synch.h"
+
+#include <threads/synch.h>
 
 /* States in a thread's life cycle. */
 enum thread_status
@@ -93,10 +94,15 @@ struct thread
     long toExpire;
     struct list_elem telem;
 	
-	//int exit_status;
+	
+	int exit_status;
 	struct list child_list;
-	struct semaphore *hold;
+	struct semaphore hold;
 	struct list_elem celem;
+	struct list file_descriptors;
+	int cur_fd;
+	//struct thread* parent;
+	
 
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
@@ -108,13 +114,7 @@ struct thread
 
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
-    uint32_t *pagedir;                 /* Page directory. */
-    struct list child_process_list;    /* List containing each child process. */
-    int exit_status;                   /* Stores the status upon exit */
-    struct list_elem child_elem;       /* Used to keep track of the element in the child list. */
-    struct semaphore being_waited_on;  /* Used to put a parent thread to sleep when it needs to wait for a child. */
-    struct list file_descriptors;      /* List of file descriptors belonging to this therad. */
-    int cur_fd;                        /* An integer available file descriptor. */
+    uint32_t *pagedir;                  /* Page directory. */
 #endif
 
     /* Owned by thread.c. */
