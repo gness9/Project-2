@@ -461,8 +461,6 @@ init_thread (struct thread *t, const char *name, int priority)
   t->priority = priority;
   t->magic = THREAD_MAGIC;
 
-  /* Init the threads list of processes it creates. */
-  list_init(&t->child_process_list);
 
   /* Init the list of file descriptors for this thread, which holds all of the files that this thread has open. */
   list_init(&t->file_descriptors);
@@ -473,9 +471,6 @@ init_thread (struct thread *t, const char *name, int priority)
 
   list_init(&t->child_list);
   sema_init(&t->hold, 0);
-   
-  /* Init the semaphore in charge of putting a parent thread to sleep. */
-  sema_init(&t->being_waited_on, 0);
 
   /* We assume the exit status is bad, unless exit() is properly
      called (and it is assigned otherwise). */
