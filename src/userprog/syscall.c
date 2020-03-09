@@ -282,26 +282,25 @@ int write (int fd, const void *buffer, unsigned length)
   return 0;
 }
 
-/* Executes the program with the given file name. */
+/*Runs the  executable  whose name  is given in cmd_line, passing any given arguments, 
+and returns the new process's  program  id (pid). */
 pid_t exec (const char * file)
 {
-  /* If a null file is passed in, return a -1. */
 	if(!file)
 	{
 		return -1;
 	}
-  lock_acquire(&lock_filesys);
-  /* Get and return the PID of the process that is created. */
+	lock_acquire(&lock_filesys);
 	pid_t child_tid = process_execute(file);
-  lock_release(&lock_filesys);
+	lock_release(&lock_filesys);
 	return child_tid;
 }
 
-/* If the PID passed in is our child, then we wait on it to terminate before proceeding */
-int wait (pid_t pid)
+/*Waits for a child process pidand retrieves the child's exit status. 
+If pidis still alive, waits until it terminates. Then, returns the  status that pidpassed to exit.*/
+int wait(pid_t pid)
 {
-	/* If the thread created is a valid thread, then we must disable interupts, and add it to this threads list of child threads. */
-  return process_wait(pid);
+	return process_wait(pid);
 }
 
 /* Creates a file of given name and size, and adds it to the existing file system. */
