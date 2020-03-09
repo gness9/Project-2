@@ -51,6 +51,8 @@ syscall_handler (struct intr_frame *f UNUSED)
 	void * stack_pointer = f->esp;
 	validate_address((const void *)stack_pointer);
 
+	int args[3];
+
 	switch(*(int *)stack_pointer)
 	{
 		case SYS_HALT:
@@ -80,7 +82,6 @@ syscall_handler (struct intr_frame *f UNUSED)
 			f->eax = wait((pid_t) arg);
 			break;
 		case SYS_CREATE: ;
-			int args[2];
 			for (int i = 0; i < 2; i++) {
 				stack_pointer = (int *) f->esp + i + 1;
 				validate_address((const void *) stack_pointer);
@@ -127,7 +128,6 @@ syscall_handler (struct intr_frame *f UNUSED)
 			f->eax = filesize(arg);
 			break;
 		case SYS_READ: ;
-			int args[3];
 			for (int i = 0; i < 3; i++) {
 				stack_pointer = (int *) f->esp + i + 1;
 				validate_address((const void *) stack_pointer);
@@ -146,7 +146,6 @@ syscall_handler (struct intr_frame *f UNUSED)
 			f->eax = read(args[0], (void *) args[1], (unsigned) args[2]);
 			break;
 		case SYS_WRITE: ;
-			int args[3];
 			for (int i = 0; i < 3; i++) {
 				stack_pointer = (int *) f->esp + i + 1;
 				validate_address((const void *) stack_pointer);
@@ -165,7 +164,6 @@ syscall_handler (struct intr_frame *f UNUSED)
 			f->eax = write(args[0], (const void *) args[1], (unsigned) args[2]);
 			break;
 		case SYS_SEEK: ;
-			int args[2];
 			for (int i = 0; i < 2; i++) {
 				stack_pointer = (int *) f->esp + i + 1;
 				validate_address((const void *) stack_pointer);
