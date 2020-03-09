@@ -42,184 +42,106 @@ syscall_init (void)
 static void
 syscall_handler (struct intr_frame *f UNUSED)
 {
-    /* First ensure that the system call argument is a valid address. If not, exit immediately. */
     check_valid_addr((const void *) f->esp);
-
-    /* Holds the stack arguments that directly follow the system call. */
     int args[3];
 
-    /* Stores the physical page pointer. */
     void * phys_page_ptr;
-
-		/* Get the value of the system call (based on enum) and call corresponding syscall function. */
 		switch(*(int *) f->esp)
 		{
-			case SYS_HALT:
-        /* Call the halt() function, which requires no arguments */
-				halt();
-				break;
+		case SYS_HALT:
+			halt();
+			break;
+		case SYS_EXIT:
+			get_stack_arguments(f, &args[0], 1);
+			exit(args[0]);
+			break;
+		case SYS_EXEC:
+			get_stack_arguments(f, &args[0], 1);
+			phys_page_ptr = (void *) pagedir_get_page(thread_current()->pagedir, (const void *) args[0]);
+			if (phys_page_ptr == NULL)
+			{
+			  exit(-1);
+			}
+			args[0] = (int) phys_page_ptr;
+			f->eax = exec((const char *) args[0]);
+			break;
+		case SYS_WAIT:
+			get_stack_arguments(f, &args[0], 1);
+			f->eax = wait((pid_t) args[0]);
+			break;
+		case SYS_CREATE:
+			get_stack_arguments(f, &args[0], 2);
+			check_buffer((void *)args[0], args[1]);
+			phys_page_ptr = pagedir_get_page(thread_current()->pagedir, (const void *) args[0]);
+			if (phys_page_ptr == NULL)
+			{
+			  exit(-1);
+			}
+			args[0] = (int) phys_page_ptr;
+			f->eax = create((const char *) args[0], (unsigned) args[1]);
+			break;
+		case SYS_REMOVE:
+			get_stack_arguments(f, &args[0], 1);
+			phys_page_ptr = pagedir_get_page(thread_current()->pagedir, (const void *) args[0]);
+			if (phys_page_ptr == NULL)
+			{
+			  exit(-1);
+			}
+			args[0] = (int) phys_page_ptr;
+			f->eax = remove((const char *) args[0]);
+			break;
+		case SYS_OPEN:
+			get_stack_arguments(f, &args[0], 1);
+			phys_page_ptr = pagedir_get_page(thread_current()->pagedir, (const void *) args[0]);
+			if (phys_page_ptr == NULL)
+			{
+			  exit(-1);
+			}
+			args[0] = (int) phys_page_ptr;
+			f->eax = open((const char *) args[0]);
+			break;
+		case SYS_FILESIZE:
+			get_stack_arguments(f, &args[0], 1);
+			f->eax = filesize(args[0]);
+			break;
+		case SYS_READ:
+			get_stack_arguments(f, &args[0], 3);
+			check_buffer((void *)args[1], args[2]);
+			phys_page_ptr = pagedir_get_page(thread_current()->pagedir, (const void *) args[1]);
+			if (phys_page_ptr == NULL)
+			{
+			  exit(-1);
+			}
+			args[1] = (int) phys_page_ptr;
+			f->eax = read(args[0], (void *) args[1], (unsigned) args[2]);
+			break;
+		case SYS_WRITE:
+			get_stack_arguments(f, &args[0], 3);
+			check_buffer((void *)args[1], args[2]);
+			phys_page_ptr = pagedir_get_page(thread_current()->pagedir, (const void *) args[1]);
+			if (phys_page_ptr == NULL)
+			{
+			  exit(-1);
+			}
+			args[1] = (int) phys_page_ptr;
+			f->eax = write(args[0], (const void *) args[1], (unsigned) args[2]);
+			break;
 
-			case SYS_EXIT:
-        /* Exit has exactly one stack argument, representing the exit status. */
-        get_stack_arguments(f, &args[0], 1);
-
-				/* We pass exit the status code of the process. */
-				exit(args[0]);
-				break;
-
-			case SYS_EXEC:
-				/* The first argument of exec is the entire command line text for executing the program */
-				get_stack_arguments(f, &args[0], 1);
-
-        /* Ensures that converted address is valid. */
-        phys_page_ptr = (void *) pagedir_get_page(thread_current()->pagedir, (const void *) args[0]);
-        if (phys_page_ptr == NULL)
-        {
-          exit(-1);
-        }
-        args[0] = (int) phys_page_ptr;
-
-        /* Return the result of the exec() function in the eax register. */
-				f->eax = exec((const char *) args[0]);
-				break;
-
-			case SYS_WAIT:
-        /* The first argument is the PID of the child process
-           that the current process must wait on. */
-				get_stack_arguments(f, &args[0], 1);
-
-        /* Return the result of the wait() function in the eax register. */
-				f->eax = wait((pid_t) args[0]);
-				break;
-
-			case SYS_CREATE:
-        /* The first argument is the name of the file being created,
-           and the second argument is the size of the file. */
-				get_stack_arguments(f, &args[0], 2);
-        check_buffer((void *)args[0], args[1]);
-
-        /* Ensures that converted address is valid. */
-        phys_page_ptr = pagedir_get_page(thread_current()->pagedir, (const void *) args[0]);
-        if (phys_page_ptr == NULL)
-        {
-          exit(-1);
-        }
-        args[0] = (int) phys_page_ptr;
-
-        /* Return the result of the create() function in the eax register. */
-        f->eax = create((const char *) args[0], (unsigned) args[1]);
-				break;
-
-			case SYS_REMOVE:
-        /* The first argument of remove is the file name to be removed. */
-        get_stack_arguments(f, &args[0], 1);
-
-        /* Ensures that converted address is valid. */
-        phys_page_ptr = pagedir_get_page(thread_current()->pagedir, (const void *) args[0]);
-        if (phys_page_ptr == NULL)
-        {
-          exit(-1);
-        }
-        args[0] = (int) phys_page_ptr;
-
-        /* Return the result of the remove() function in the eax register. */
-        f->eax = remove((const char *) args[0]);
-				break;
-
-			case SYS_OPEN:
-        /* The first argument is the name of the file to be opened. */
-        get_stack_arguments(f, &args[0], 1);
-
-        /* Ensures that converted address is valid. */
-        phys_page_ptr = pagedir_get_page(thread_current()->pagedir, (const void *) args[0]);
-        if (phys_page_ptr == NULL)
-        {
-          exit(-1);
-        }
-        args[0] = (int) phys_page_ptr;
-
-        /* Return the result of the remove() function in the eax register. */
-        f->eax = open((const char *) args[0]);
-
-				break;
-
-			case SYS_FILESIZE:
-        /* filesize has exactly one stack argument, representing the fd of the file. */
-        get_stack_arguments(f, &args[0], 1);
-
-        /* We return file size of the fd to the process. */
-        f->eax = filesize(args[0]);
-				break;
-
-			case SYS_READ:
-        /* Get three arguments off of the stack. The first represents the fd, the second
-           represents the buffer, and the third represents the buffer length. */
-        get_stack_arguments(f, &args[0], 3);
-
-        /* Make sure the whole buffer is valid. */
-        check_buffer((void *)args[1], args[2]);
-
-        /* Ensures that converted address is valid. */
-        phys_page_ptr = pagedir_get_page(thread_current()->pagedir, (const void *) args[1]);
-        if (phys_page_ptr == NULL)
-        {
-          exit(-1);
-        }
-        args[1] = (int) phys_page_ptr;
-
-        /* Return the result of the read() function in the eax register. */
-        f->eax = read(args[0], (void *) args[1], (unsigned) args[2]);
-				break;
-
-			case SYS_WRITE:
-        /* Get three arguments off of the stack. The first represents the fd, the second
-           represents the buffer, and the third represents the buffer length. */
-        get_stack_arguments(f, &args[0], 3);
-
-        /* Make sure the whole buffer is valid. */
-        check_buffer((void *)args[1], args[2]);
-
-        /* Ensures that converted address is valid. */
-        phys_page_ptr = pagedir_get_page(thread_current()->pagedir, (const void *) args[1]);
-        if (phys_page_ptr == NULL)
-        {
-          exit(-1);
-        }
-        args[1] = (int) phys_page_ptr;
-
-        /* Return the result of the write() function in the eax register. */
-        f->eax = write(args[0], (const void *) args[1], (unsigned) args[2]);
-        break;
-
-			case SYS_SEEK:
-        /* Get two arguments off of the stack. The first represents the fd, the second
-           represents the position. */
-        get_stack_arguments(f, &args[0], 2);
-
-        /* Return the result of the seek() function in the eax register. */
-        seek(args[0], (unsigned) args[1]);
-        break;
-
-			case SYS_TELL:
-        /* tell has exactly one stack argument, representing the fd of the file. */
-        get_stack_arguments(f, &args[0], 1);
-
-        /* We return the position of the next byte to read or write in the fd. */
-        f->eax = tell(args[0]);
-        break;
-
-			case SYS_CLOSE:
-        /* close has exactly one stack argument, representing the fd of the file. */
-        get_stack_arguments(f, &args[0], 1);
-
-        /* We close the file referenced by the fd. */
-        close(args[0]);
-				break;
-
-			default:
-        /* If an invalid system call was sent, terminate the program. */
-				exit(-1);
-				break;
+		case SYS_SEEK:
+			get_stack_arguments(f, &args[0], 2);
+			seek(args[0], (unsigned) args[1]);
+			break;
+		case SYS_TELL:
+			get_stack_arguments(f, &args[0], 1);
+			f->eax = tell(args[0]);
+			break;
+		case SYS_CLOSE:
+			get_stack_arguments(f, &args[0], 1);
+			close(args[0]);
+			break;
+		default:
+			exit(-1);
+			break;
 		}
 }
 
