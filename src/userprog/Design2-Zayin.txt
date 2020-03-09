@@ -8,8 +8,8 @@
 
 >> Fill in the names of your group members.
 
-Zayin Brunson
 Aaron Simpson
+Zayin Brunson
 Glenn Ness
 
 ---- PRELIMINARIES ----
@@ -17,13 +17,22 @@ Glenn Ness
 >> If you have any preliminary comments on your submission, notes for the
 >> TAs, or extra credit, please give them here.
 
+Make check should hopefully give 20 out of 80 tests failed
+
 >> Please cite any offline or online sources you consulted while
 >> preparing your submission, other than the Pintos documentation, course
 >> text, lecture notes, and course staff.
 
 We primarily consulted a mix of these:
 https://github.com/Waqee/Pintos-Project-2/
+https://raw.githubusercontent.com/sambasev/Pintos-Project-3/
+https://xp-dev.com/sc/199673/
+https://github.com/codyjack/OS-pintos/blob/master
+https://github.com/satish3485/pintos-project-1/
+http://www.scs.stanford.edu/07au-cs140/labs/project2aut07.pdf
 https://github.com/ChristianJHughes/pintos-project2/
+https://cs.jhu.edu/~huang/cs318/fall17/project/project2.html
+http://www.scs.stanford.edu/10wi-cs140/labs/10wi-proj2.pdf
 
 
    			ARGUMENT PASSING
@@ -170,10 +179,12 @@ The primary way our code ensures this is through the use of synchronization prim
 >> terminates without waiting, before C exits?  After C exits?  Are
 >> there any special cases?
 
-The parent waits for its children to complete via the hold semaphore. The parent keeps a list of children. 
-If P calls wait(C) before C exits, P will wait for C until C has signaled it is done by calling sema_up when it exits.
-If P calls wait(C) after C exits, P will not wait since C has already been removed from P's list of children.
-If P terminates without waiting either before or after C exits, C will become an orphan and will never be able to signal to its parent when it is finished executing.
+There is a hold semaphore that the parent uses to make sure all processes in the parent’s child_list runs before the parent exits.
+If P calls wait(C) before C exits, P will wait for C until sema_up is called by C when calling thread_exit().
+If P calls wait(C) after C exits, P will not wait as C has already called thread_exit() and removed itself from child_list.
+If P terminates before or after C exits, C will never be able to signal it’s parent causing the threads to not finish correctly.
+No special cases.
+
 
 
 
