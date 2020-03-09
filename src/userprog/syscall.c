@@ -344,19 +344,6 @@ syscall_handler (struct intr_frame *f UNUSED)
   thread_exit ();
 } */
 
-void check_valid_addr (const void *ptr_to_check)
-{
-  /* Terminate the program with an exit status of -1 if we are passed
-     an argument that is not in the user address space or is null. Also make
-     sure that pointer doesn't go beyond the bounds of virtual address space.  */
-  if(!is_user_vaddr(ptr_to_check) || ptr_to_check == NULL || ptr_to_check < (void *) 0x08048000)
-	{
-    /* Terminate the program and free its resources */
-    exit(-1);
-	}
-}
-
-
 /* Terminates Pintos, shutting it down entirely (bummer). */
 void halt (void)
 {
@@ -666,20 +653,44 @@ void close (int fd)
   return;
 }
 
-/*Based on the file descriptor, gets a file from the list of files*/
-struct entry_file * obtain_file(int fd) {
-	
-	struct list_elem * el;
-	
-	el = list_front(&thread_current()->filedes_list);
-	
-	while (el != NULL) {
-		struct entry_file *f = list_entry (el, struct entry_file, element_file);
-		if(fd == f->des_file)
-		{
-			return f;
-		}
-		el = el->next;
+/* Check to make sure that the given pointer is in user space,
+   and is not null. We must exit the program and free its resources should
+   any of these conditions be violated. */
+void check_valid_addr (const void *ptr_to_check)
+{
+  /* Terminate the program with an exit status of -1 if we are passed
+     an argument that is not in the user address space or is null. Also make
+     sure that pointer doesn't go beyond the bounds of virtual address space.  */
+  if(!is_user_vaddr(ptr_to_check) || ptr_to_check == NULL || ptr_to_check < (void *) 0x08048000)
+	{
+    /* Terminate the program and free its resources */
+    exit(-1);
 	}
-	return NULL;
+}
+
+/* Ensures that each memory address in a given buffer is in valid user space. */
+void check_buffer (void *buff_to_check, unsigned size)
+{
+  unsigned i;
+  char *ptr  = (char * )buff_to_check;
+  for (i = 0; i < size; i++)
+    {
+      check_valid_addr((const void *) ptr);
+      ptr++;
+    }
+}
+
+/* Code inspired by GitHub Repo created by ryantimwilson (full link in Design2.txt).
+   Get up to three arguments from a programs stack (they directly follow the system
+   call argument). */
+void get_stack_arguments (struct intr_frame *f, int *args, int num_of_args)
+{
+  int i;
+  int *ptr;
+  for (i = 0; i < num_of_args; i++)
+    {
+      ptr = (int *) f->esp + i + 1;
+      check_valid_addr((const void *) ptr);
+      args[i] = *ptr;
+    }
 }
