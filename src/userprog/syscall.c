@@ -240,48 +240,6 @@ void exit(int status)
 	thread_exit ();
 }
 
-/* Writes LENGTH bytes from BUFFER to the open file FD. Returns the number of bytes actually written,
- which may be less than LENGTH if some bytes could not be written. */
-int write (int fd, const void *buffer, unsigned length)
-{
-  /* list element to iterate the list of file descriptors. */
-  struct list_elem *temp;
-
-  lock_acquire(&lock_filesys);
-
-  /* If fd is equal to one, then we write to STDOUT (the console, usually). */
-	if(fd == 1)
-	{
-		putbuf(buffer, length);
-    lock_release(&lock_filesys);
-    return length;
-	}
-  /* If the user passes STDIN or no files are present, then return 0. */
-  if (fd == 0 || list_empty(&thread_current()->file_descriptors))
-  {
-    lock_release(&lock_filesys);
-    return 0;
-  }
-
-  /* Check to see if the given fd is open and owned by the current process. If so, return
-     the number of bytes that were written to the file. */
-  for (temp = list_front(&thread_current()->file_descriptors); temp != NULL; temp = temp->next)
-  {
-      struct thread_file *t = list_entry (temp, struct thread_file, file_elem);
-      if (t->file_descriptor == fd)
-      {
-        int bytes_written = (int) file_write(t->file_addr, buffer, length);
-        lock_release(&lock_filesys);
-        return bytes_written;
-      }
-  }
-
-  lock_release(&lock_filesys);
-
-  /* If we can't write to the file, return 0. */
-  return 0;
-}
-
 /*Runs the  executable  whose name  is given in cmd_line, passing any given arguments, 
 and returns the new process's  program  id (pid). */
 pid_t exec (const char * file)
@@ -303,52 +261,49 @@ int wait(pid_t pid)
 	return process_wait(pid);
 }
 
-/* Creates a file of given name and size, and adds it to the existing file system. */
+/*Creates a  new file called fileinitially initial_sizebytes in size. 
+Returns true  if successful,  false otherwise. Creating  a  new  file  does  not  open  it:  
+opening  the  new  file  is  a  separate  operation  which  would  require  a opensystem call. */
 bool create (const char *file, unsigned initial_size)
 {
-  lock_acquire(&lock_filesys);
-  bool file_status = filesys_create(file, initial_size);
-  lock_release(&lock_filesys);
-  return file_status;
+	lock_acquire(&lock_filesys);
+	bool file_create = filesys_create(file, initial_size);
+	lock_release(&lock_filesys);
+	return file_create;
+} 
+
+/*Deletes the file called file. Returns true if successful, false otherwise. 
+A file may be removed regardless of whether it is open or closed, 
+and removing an open file does not close it. See Removing an Open File, for details. */
+bool remove (const char *file) 
+{
+	lock_acquire(&lock_filesys);
+	bool file_remove = filesys_remove(file);
+	lock_release(&lock_filesys);
+	return file_remove;
 }
 
-/* Remove the file from the file system, and return a boolean indicating
-   the success of the operation. */
-bool remove (const char *file)
+/*Opens  the  file  called file.  Returns  a  nonnegative  integer  handle 
+called  a  "file  descriptor"  (fd),  or -1  if  the file could not be opened. */
+int open(const char *file) 
 {
-  lock_acquire(&lock_filesys);
-  bool was_removed = filesys_remove(file);
-  lock_release(&lock_filesys);
-  return was_removed;
-}
-
-/* Opens a file with the given name, and returns the file descriptor assigned by the
-   thread that opened it. Inspiration derived from GitHub user ryantimwilson (see
-   Design2.txt for attribution link). */
-int open (const char *file)
-{
-  /* Make sure that only one process can get ahold of the file system at one time. */
-  lock_acquire(&lock_filesys);
-
-  struct file* f = filesys_open(file);
-
-  /* If no file was created, then return -1. */
-  if(f == NULL)
-  {
-    lock_release(&lock_filesys);
-    return -1;
-  }
-
-  /* Create a struct to hold the file/fd, for use in a list in the current process.
-     Increment the fd for future files. Release our lock and return the fd as an int. */
-  struct thread_file *new_file = malloc(sizeof(struct thread_file));
-  new_file->file_addr = f;
-  int fd = thread_current ()->cur_fd;
-  thread_current ()->cur_fd++;
-  new_file->file_descriptor = fd;
-  list_push_front(&thread_current ()->file_descriptors, &new_file->file_elem);
-  lock_release(&lock_filesys);
-  return fd;
+	lock_acquire(&lock_filesys);
+	/* Semaphore/lock should go here */
+	struct file* openedFile = filesys_open(file);
+	if (openedFile == NULL)
+	{
+		lock_release(&lock_filesys);
+		// Release lock
+		return -1;
+	}
+	struct entry_file* process_file = malloc(sizeof(*process_file));
+	process_file->addr_file = file;
+	process_file->des_file = thread_current()->cur_fd;
+	thread_current()->cur_fd++;
+	list_push_front(&thread_current()->filedes_list, &process_file->element_file);
+	lock_release(&lock_filesys);
+	/* Release all locks here */
+	return process_file->des_file;
 }
 
 /* Returns the size, in bytes, of the file open as fd. */
@@ -425,6 +380,48 @@ int read (int fd, void *buffer, unsigned length)
 
   /* If we can't read from the file, return -1. */
   return -1;
+}
+
+/* Writes LENGTH bytes from BUFFER to the open file FD. Returns the number of bytes actually written,
+ which may be less than LENGTH if some bytes could not be written. */
+int write (int fd, const void *buffer, unsigned length)
+{
+  /* list element to iterate the list of file descriptors. */
+  struct list_elem *temp;
+
+  lock_acquire(&lock_filesys);
+
+  /* If fd is equal to one, then we write to STDOUT (the console, usually). */
+	if(fd == 1)
+	{
+		putbuf(buffer, length);
+    lock_release(&lock_filesys);
+    return length;
+	}
+  /* If the user passes STDIN or no files are present, then return 0. */
+  if (fd == 0 || list_empty(&thread_current()->file_descriptors))
+  {
+    lock_release(&lock_filesys);
+    return 0;
+  }
+
+  /* Check to see if the given fd is open and owned by the current process. If so, return
+     the number of bytes that were written to the file. */
+  for (temp = list_front(&thread_current()->file_descriptors); temp != NULL; temp = temp->next)
+  {
+      struct thread_file *t = list_entry (temp, struct thread_file, file_elem);
+      if (t->file_descriptor == fd)
+      {
+        int bytes_written = (int) file_write(t->file_addr, buffer, length);
+        lock_release(&lock_filesys);
+        return bytes_written;
+      }
+  }
+
+  lock_release(&lock_filesys);
+
+  /* If we can't write to the file, return 0. */
+  return 0;
 }
 
 
