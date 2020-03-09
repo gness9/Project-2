@@ -20,15 +20,6 @@ struct entry_file * obtain_file(int fd);
 call argument). */
 void get_stack_arguments (struct intr_frame *f, int * args, int num_of_args);
 
-/* Creates a struct to insert files and their respective file descriptor into
-   the file_descriptors list for the current thread. */
-struct thread_file
-{
-    struct list_elem file_elem;
-    struct file *file_addr;
-    int file_descriptor;
-};
-
 struct entry_file {
 	struct file* addr_file;
 	int des_file;
@@ -307,28 +298,46 @@ int open(const char *file)
   /* Create a struct to hold the file/fd, for use in a list in the current process.
      Increment the fd for future files. Release our lock and return the fd as an int. */
   struct thread_file *new_file = malloc(sizeof(struct thread_file));
-  new_file->file_addr = openedFile;
+  new_file->addr_file = openedFile;
   int fd = thread_current ()->cur_fd;
   thread_current ()->cur_fd++;
-  new_file->file_descriptor = fd;
-  list_push_front(&thread_current ()->file_descriptors, &new_file->file_elem);
+  new_file->des_file = fd;
+  list_push_front(&thread_current ()->file_descriptors, &new_file->element_file);
   lock_release(&lock_filesys);
   return fd;
 }
 
-/*Returns the size, in bytes, of the file open as fd. */
-int filesize (int fd) 
+/* Returns the size, in bytes, of the file open as fd. */
+int filesize (int fd)
 {
-	lock_acquire(&lock_filesys);
-	struct entry_file *ef = obtain_file(fd);
-	if(ef->addr_file != NULL)
-	{
-		int file_size = file_length(ef->addr_file);
-		lock_release(&lock_filesys);
-		return file_size;
-	}
-	lock_release(&lock_filesys);
-	return -1;
+  /* list element to iterate the list of file descriptors. */
+  struct list_elem *temp;
+
+  lock_acquire(&lock_filesys);
+
+  /* If there are no files associated with this thread, return -1 */
+  if (list_empty(&thread_current()->file_descriptors))
+  {
+    lock_release(&lock_filesys);
+    return -1;
+  }
+
+  /* Check to see if the given fd is open and owned by the current process. If so, return
+     the length of the file. */
+  for (temp = list_front(&thread_current()->file_descriptors); temp != NULL; temp = temp->next)
+  {
+      struct thread_file *t = list_entry (temp, struct thread_file, element_file);
+      if (t->des_file == fd)
+      {
+        lock_release(&lock_filesys);
+        return (int) file_length(t->addr_file);
+      }
+  }
+
+  lock_release(&lock_filesys);
+
+  /* Return -1 if we can't find the file. */
+  return -1;
 }
 
 /* Reads size bytes from the file open as fd into buffer. Returns the number of bytes actually read
@@ -359,11 +368,11 @@ int read (int fd, void *buffer, unsigned length)
      then we read from the file and return the number of bytes written. */
   for (temp = list_front(&thread_current()->file_descriptors); temp != NULL; temp = temp->next)
   {
-      struct thread_file *t = list_entry (temp, struct thread_file, file_elem);
-      if (t->file_descriptor == fd)
+      struct thread_file *t = list_entry (temp, struct thread_file, element_file);
+      if (t->des_file == fd)
       {
         lock_release(&lock_filesys);
-        int bytes = (int) file_read(t->file_addr, buffer, length);
+        int bytes = (int) file_read(t->addr_file, buffer, length);
         return bytes;
       }
   }
@@ -401,10 +410,10 @@ int write (int fd, const void *buffer, unsigned length)
      the number of bytes that were written to the file. */
   for (temp = list_front(&thread_current()->file_descriptors); temp != NULL; temp = temp->next)
   {
-      struct thread_file *t = list_entry (temp, struct thread_file, file_elem);
-      if (t->file_descriptor == fd)
+      struct thread_file *t = list_entry (temp, struct thread_file, element_file);
+      if (t->des_file == fd)
       {
-        int bytes_written = (int) file_write(t->file_addr, buffer, length);
+        int bytes_written = (int) file_write(t->addr_file, buffer, length);
         lock_release(&lock_filesys);
         return bytes_written;
       }
@@ -438,10 +447,10 @@ void seek (int fd, unsigned position)
      seek through the appropriate file. */
   for (temp = list_front(&thread_current()->file_descriptors); temp != NULL; temp = temp->next)
   {
-      struct thread_file *t = list_entry (temp, struct thread_file, file_elem);
-      if (t->file_descriptor == fd)
+      struct thread_file *t = list_entry (temp, struct thread_file, element_file);
+      if (t->des_file == fd)
       {
-        file_seek(t->file_addr, position);
+        file_seek(t->addr_file, position);
         lock_release(&lock_filesys);
         return;
       }
@@ -473,10 +482,10 @@ unsigned tell (int fd)
      call file_tell() and return the position. */
   for (temp = list_front(&thread_current()->file_descriptors); temp != NULL; temp = temp->next)
   {
-      struct thread_file *t = list_entry (temp, struct thread_file, file_elem);
-      if (t->file_descriptor == fd)
+      struct thread_file *t = list_entry (temp, struct thread_file, element_file);
+      if (t->des_file == fd)
       {
-        unsigned position = (unsigned) file_tell(t->file_addr);
+        unsigned position = (unsigned) file_tell(t->addr_file);
         lock_release(&lock_filesys);
         return position;
       }
@@ -507,11 +516,11 @@ void close (int fd)
      close the file and remove it from our list of file_descriptors. */
   for (temp = list_front(&thread_current()->file_descriptors); temp != NULL; temp = temp->next)
   {
-      struct thread_file *t = list_entry (temp, struct thread_file, file_elem);
-      if (t->file_descriptor == fd)
+      struct thread_file *t = list_entry (temp, struct thread_file, element_file);
+      if (t->des_file == fd)
       {
-        file_close(t->file_addr);
-        list_remove(&t->file_elem);
+        file_close(t->addr_file);
+        list_remove(&t->element_file);
         lock_release(&lock_filesys);
         return;
       }
