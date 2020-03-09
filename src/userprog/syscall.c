@@ -61,6 +61,7 @@ syscall_handler (struct intr_frame *f UNUSED)
   switch(system_call) 
   {
     case SYS_HALT:
+	  printf("FAILED ALL");
 	  halt();
       break;
     case SYS_EXIT: ;
