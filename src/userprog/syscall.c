@@ -47,6 +47,7 @@ syscall_handler (struct intr_frame *f UNUSED)
     exit(-1);
   }
   
+  printf("CCCCCCC");
   //int * args = f->esp;
   
   switch(*(int*)f->esp) 
@@ -122,6 +123,7 @@ void halt (void)
 If the process's parent waits for it (see below), this is the status that will be returned.*/
 void exit(int status) 
 {
+	printf("WE MADE IT");
 	thread_current()->status_exit = status;
 	printf("%s: exit(%d)\n", thread_current()->name, status);
 	thread_exit ();
