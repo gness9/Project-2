@@ -254,30 +254,33 @@ pid_t exec (const char * file)
 	return child_tid;
 }
 
-/* If the PID passed in is our child, then we wait on it to terminate before proceeding */
-int wait (pid_t pid)
+/*Waits for a child process pidand retrieves the child's exit status. 
+If pidis still alive, waits until it terminates. Then, returns the  status that pidpassed to exit.*/
+int wait(pid_t pid)
 {
-	/* If the thread created is a valid thread, then we must disable interupts, and add it to this threads list of child threads. */
-  return process_wait(pid);
+	return process_wait(pid);
 }
 
-/* Creates a file of given name and size, and adds it to the existing file system. */
+/*Creates a  new file called fileinitially initial_sizebytes in size. 
+Returns true  if successful,  false otherwise. Creating  a  new  file  does  not  open  it:  
+opening  the  new  file  is  a  separate  operation  which  would  require  a opensystem call. */
 bool create (const char *file, unsigned initial_size)
 {
-  lock_acquire(&lock_filesys);
-  bool file_status = filesys_create(file, initial_size);
-  lock_release(&lock_filesys);
-  return file_status;
-}
+	lock_acquire(&lock_filesys);
+	bool file_create = filesys_create(file, initial_size);
+	lock_release(&lock_filesys);
+	return file_create;
+} 
 
-/* Remove the file from the file system, and return a boolean indicating
-   the success of the operation. */
-bool remove (const char *file)
+/*Deletes the file called file. Returns true if successful, false otherwise. 
+A file may be removed regardless of whether it is open or closed, 
+and removing an open file does not close it. See Removing an Open File, for details. */
+bool remove (const char *file) 
 {
-  lock_acquire(&lock_filesys);
-  bool was_removed = filesys_remove(file);
-  lock_release(&lock_filesys);
-  return was_removed;
+	lock_acquire(&lock_filesys);
+	bool file_remove = filesys_remove(file);
+	lock_release(&lock_filesys);
+	return file_remove;
 }
 
 /* Opens a file with the given name, and returns the file descriptor assigned by the
