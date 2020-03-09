@@ -19,6 +19,8 @@ static void syscall_handler (struct intr_frame *);
 call argument). */
 void get_stack_arguments (struct intr_frame *f, int * args, int num_of_args);
 
+struct entry_file * obtain_file(int fd);
+
 /* Creates a struct to insert files and their respective file descriptor into
    the file_descriptors list for the current thread. */
 struct thread_file
