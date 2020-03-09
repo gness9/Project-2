@@ -14,10 +14,8 @@
 #include "threads/malloc.h"
 
 static void syscall_handler (struct intr_frame *);
-<<<<<<< HEAD
 struct entry_file * obtain_file(int fd);
 void * obtain_arguments(const void *vaddr);
-=======
 
 /* Get up to three arguments from a programs stack (they directly follow the system
 call argument). */
@@ -67,7 +65,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 		case SYS_EXEC:
 			stack_pointer = (int *)stack_pointer + 1;
 			validate_address((const void *) stack_pointer);
-			int arg = *(int *)stack_pointer;
+			arg = *(int *)stack_pointer;
 			virt_page = (void *) pagedir_get_page(thread_current()->pagedir, (const void *) arg);
 			if (virt_page == NULL) {
 				exit(-1);
@@ -78,7 +76,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 		case SYS_WAIT:
 			stack_pointer = (int *)stack_pointer + 1;
 			validate_address((const void *) stack_pointer);
-			int arg = *(int *)stack_pointer;
+			arg = *(int *)stack_pointer;
 			f->eax = wait((pid_t) arg);
 			break;
 		case SYS_CREATE:
@@ -103,7 +101,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 		case SYS_REMOVE:
 			stack_pointer = (int *)stack_pointer + 1;
 			validate_address((const void *) stack_pointer);
-			int arg = *(int *)stack_pointer;
+			arg = *(int *)stack_pointer;
 			virt_page = pagedir_get_page(thread_current()->pagedir, (const void *) args[0]);
 			if (virt_page == NULL) {
 				exit(-1);
@@ -114,7 +112,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 		case SYS_OPEN:
 			stack_pointer = (int *)stack_pointer + 1;
 			validate_address((const void *) stack_pointer);
-			int arg = *(int *)stack_pointer;
+			arg = *(int *)stack_pointer;
 			virt_page = pagedir_get_page(thread_current()->pagedir, (const void *) args[0]);
 			if (virt_page == NULL) {
 				exit(-1);
@@ -125,7 +123,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 		case SYS_FILESIZE:
 			stack_pointer = (int *)stack_pointer + 1;
 			validate_address((const void *) stack_pointer);
-			int arg = *(int *)stack_pointer;
+			arg = *(int *)stack_pointer;
 			f->eax = filesize(arg);
 			break;
 		case SYS_READ:
@@ -178,13 +176,13 @@ syscall_handler (struct intr_frame *f UNUSED)
 		case SYS_TELL:
 			stack_pointer = (int *)stack_pointer + 1;
 			validate_address((const void *) stack_pointer);
-			int arg = *(int *)stack_pointer;
+			arg = *(int *)stack_pointer;
 			f->eax = tell(arg);
 			break;
 		case SYS_CLOSE:
 			stack_pointer = (int *)stack_pointer + 1;
 			validate_address((const void *) stack_pointer);
-			int arg = *(int *)stack_pointer;
+			arg = *(int *)stack_pointer;
 			close(args);
 			break;
 		default:
@@ -193,7 +191,6 @@ syscall_handler (struct intr_frame *f UNUSED)
 	}
 }
 
-<<<<<<< HEAD
 /*
 void check_buffer (void *buff_to_check, unsigned size)
 {
@@ -385,7 +382,7 @@ int open(const char *file)
   /* Create a struct to hold the file/fd, for use in a list in the current process.
      Increment the fd for future files. Release our lock and return the fd as an int. */
   struct thread_file *new_file = malloc(sizeof(struct thread_file));
-  new_file->file_addr = f;
+  new_file->file_addr = file;
   int fd = thread_current ()->cur_fd;
   thread_current ()->cur_fd++;
   new_file->file_descriptor = fd;
