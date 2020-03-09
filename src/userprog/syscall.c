@@ -381,6 +381,7 @@ pid_t exec (const char * file)
 		return -1;
 	}
 	pid_t child_tid = process_execute(file);
+	lock_release(&lock_filesys);
 	return child_tid;
 }
 
@@ -397,7 +398,9 @@ Returns true  if successful,  false otherwise. Creating  a  new  file  does  not
 opening  the  new  file  is  a  separate  operation  which  would  require  a opensystem call. */
 bool create (const char *file, unsigned initial_size)
 {
+	lock_acquire(&lock_filesys);
 	bool file_create = filesys_create(file, initial_size);
+	lock_release(&lock_filesys);
 	return file_create;
 } 
 
@@ -406,7 +409,9 @@ A file may be removed regardless of whether it is open or closed,
 and removing an open file does not close it. See Removing an Open File, for details. */
 bool remove (const char *file) 
 {
+	lock_acquire(&lock_filesys);
 	bool file_remove = filesys_remove(file);
+	lock_release(&lock_filesys);
 	return file_remove;
 }
 
@@ -414,10 +419,12 @@ bool remove (const char *file)
 called  a  "file  descriptor"  (fd),  or -1  if  the file could not be opened. */
 int open(const char *file) 
 {
+	lock_acquire(&lock_filesys);
 	/* Semaphore/lock should go here */
 	struct file* openedFile = filesys_open(file);
 	if (openedFile == NULL)
 	{
+		lock_release(&lock_filesys);
 		// Release lock
 		return -1;
 	}
@@ -426,6 +433,7 @@ int open(const char *file)
 	processFile->des_file = thread_current()->fd_count;
 	thread_current()->fd_count++;
 	list_push_front(&thread_current()->filedes_list, &processFile->element_file);
+	lock_release(&lock_filesys);
 	/* Release all locks here */
 	return processFile->des_file;
 }
@@ -433,12 +441,15 @@ int open(const char *file)
 /*Returns the size, in bytes, of the file open as fd. */
 int filesize (int fd) 
 {
+	lock_acquire(&lock_filesys);
 	struct entry_file *ef = obtain_file(fd);
 	if(ef->addr_file != NULL)
 	{
 		int file_size = file_length(ef->addr_file);
+		lock_release(&lock_filesys);
 		return file_size;
 	}
+	lock_release(&lock_filesys);
 	return -1;
 }
 
@@ -448,8 +459,11 @@ int read(int fd, void *buffer, unsigned size)
 {
 	struct list_elem *e;
 
+	lock_acquire(&lock_filesys);
+
 	if (fd == 0)
 	{
+		lock_release(&lock_filesys);
 		return (int) input_getc();
 	}
 
@@ -460,9 +474,11 @@ int read(int fd, void *buffer, unsigned size)
 		if (f->des_file == fd)
 		{
 			int bytes_read = (int) file_read(f->addr_file, buffer, size);
+			lock_release(&lock_filesys);
 			return bytes_read;
 		}
 	}
+	lock_release(&lock_filesys);
 	return -1;
 }
 
@@ -471,10 +487,13 @@ which may be less than sizeif some bytes could not be written. */
 int write(int fd, const void *buffer, unsigned size) 
 {
 	struct list_elem *e;
+	
+	lock_acquire(&lock_filesys);
 
 	if (fd == 1)
 	{
 		putbuf(buffer, size);
+		lock_release(&lock_filesys);
 		return size;
 	}
 
@@ -485,6 +504,7 @@ int write(int fd, const void *buffer, unsigned size)
 		if (f->des_file == fd)
 		{
 			int bytes_written = (int) file_write(f->addr_file, buffer, size);
+			lock_release(&lock_filesys);
 			return bytes_written;
 		}
 	}
@@ -495,7 +515,11 @@ int write(int fd, const void *buffer, unsigned size)
 expressed  in  bytes  from  the beginning of the file. (Thus, a positionof 0 is the file's start.) */
 void seek (int fd, unsigned position)
 {	
+	
+	lock_acquire(&lock_filesys);
+	
 	if(list_empty(&thread_current()->filedes_list)) {
+		lock_release(&lock_filesys);
 		return;
 	}
 	
@@ -506,6 +530,7 @@ void seek (int fd, unsigned position)
 		file_seek(ef->addr_file, position);
 	}
 	
+	lock_release(&lock_filesys);
 	return;
 	
 }
@@ -516,7 +541,10 @@ unsigned
 tell (int fd)
 {
 	
+	lock_acquire(&lock_filesys);
+	
 	if(list_empty(&thread_current()->filedes_list)) {
+		lock_release(&lock_filesys);
 		return -1;
 	}
 	
@@ -525,9 +553,11 @@ tell (int fd)
 	if(ef->addr_file != NULL)
 	{
 		unsigned file_pos = (unsigned) file_tell(ef->addr_file);
+		lock_release(&lock_filesys);
 		return file_pos;
 	}
 	
+	lock_release(&lock_filesys);
 	return -1;
 	
 }
@@ -537,10 +567,13 @@ by calling this function for each one. */
 void
 close (int fd)
 { 
+
+	lock_acquire(&lock_filesys);
 	/*lock_acquire(&locking_file);*/
 	
 	if(list_empty(&thread_current()->filedes_list)) {
 		/*lock_release(&locking_file);*/
+		lock_release(&lock_filesys);
 		return;
 	}
 	
@@ -550,9 +583,11 @@ close (int fd)
 	{
 		file_close(ef->addr_file);
 		list_remove(&ef->element_file);
+		lock_release(&lock_filesys);
 		return;
 	}
 	
+	lock_release(&lock_filesys);
 	return;
 
 }
