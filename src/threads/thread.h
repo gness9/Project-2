@@ -93,10 +93,6 @@ struct thread
     long toExpire;
     struct list_elem telem;
 	
-	//int exit_status;
-	struct list child_list;
-	struct semaphore *hold;
-	struct list_elem celem;
 
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
