@@ -29,6 +29,12 @@ struct thread_file
     int file_descriptor;
 };
 
+struct entry_file {
+	struct file* addr_file;
+	int des_file;
+	struct list_elem element_file;
+};
+
 /* Lock is in charge of ensuring that only one process can access the file system at one time. */
 struct lock lock_filesys;
 
