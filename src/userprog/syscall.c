@@ -225,19 +225,19 @@ syscall_handler (struct intr_frame *f UNUSED)
 		}
 }
 
-/* Terminates Pintos, shutting it down entirely (bummer). */
+/*Terminates Pintos by calling shutdown_power_off()*/
 void halt (void)
 {
 	shutdown_power_off();
 }
 
-/* Terminates the current user program. It's exit status is printed,
-   and its status returned to the kernel. */
-void exit (int status)
+/*Terminates the current user program, returning statusto the kernel. 
+If the process's parent waits for it (see below), this is the status that will be returned.*/
+void exit(int status) 
 {
-	thread_current()->exit_status = status;
+	thread_current()->status_exit = status;
 	printf("%s: exit(%d)\n", thread_current()->name, status);
-  thread_exit ();
+	thread_exit ();
 }
 
 /* Writes LENGTH bytes from BUFFER to the open file FD. Returns the number of bytes actually written,
