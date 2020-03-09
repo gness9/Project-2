@@ -42,6 +42,9 @@ then  any  system  call arguments, and carry out appropriate actions.*/
 static void
 syscall_handler (struct intr_frame *f UNUSED) 
 {
+	
+  check_valid_addr((const void *) f->esp);	
+	
   if (f->esp == NULL)
   {
     exit(-1);
@@ -51,7 +54,7 @@ syscall_handler (struct intr_frame *f UNUSED)
   printf("BLARGH: %d, %d", *((int*)f->esp+1), SYS_EXIT);
   //int * args = f->esp;
   
-  switch(*(int*)f->esp+1) 
+  switch(*(int*)f->esp) 
   {
     case SYS_HALT:
 	  halt();
@@ -115,6 +118,19 @@ syscall_handler (struct intr_frame *f UNUSED)
   }
   thread_exit ();
 }
+
+void check_valid_addr (const void *ptr_to_check)
+{
+  /* Terminate the program with an exit status of -1 if we are passed
+     an argument that is not in the user address space or is null. Also make
+     sure that pointer doesn't go beyond the bounds of virtual address space.  */
+  if(!is_user_vaddr(ptr_to_check) || ptr_to_check == NULL || ptr_to_check < (void *) 0x08048000)
+	{
+    /* Terminate the program and free its resources */
+    exit(-1);
+	}
+}
+
 
 /*Terminates Pintos by calling shutdown_power_off()*/
 void halt (void)
