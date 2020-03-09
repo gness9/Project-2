@@ -4,42 +4,41 @@
 #include "threads/interrupt.h"
 #include "threads/thread.h"
 #include "threads/vaddr.h"
-#include "threads/init.h"
-#include "threads/malloc.h"
 #include "userprog/pagedir.h"
-#include "userprog/process.h"
-#include "devices/shutdown.h"
-#include "devices/input.h"
+#include "threads/init.h"
+#include "devices/shutdown.h" /* Imports shutdown_power_off() for use in halt(). */
 #include "filesys/file.h"
 #include "filesys/filesys.h"
+#include "userprog/process.h"
+#include "devices/input.h"
+#include "threads/malloc.h"
 
 static void syscall_handler (struct intr_frame *);
-struct entry_file * obtain_file(int fd);
-void * obtain_arguments(const void *vaddr);
 
+/* Get up to three arguments from a programs stack (they directly follow the system
+call argument). */
 void get_stack_arguments (struct intr_frame *f, int * args, int num_of_args);
 
-/* lock makes sure that file system accesss only has one process at a time 
-STILL NEEDS TO BE IMPLEMENTED*/
-/*struct lock locking_file;*/
-
-struct entry_file {
-	struct file* addr_file;
-	int des_file;
-	struct list_elem element_file;
+/* Creates a struct to insert files and their respective file descriptor into
+   the file_descriptors list for the current thread. */
+struct thread_file
+{
+    struct list_elem file_elem;
+    struct file *file_addr;
+    int file_descriptor;
 };
 
 /* Lock is in charge of ensuring that only one process can access the file system at one time. */
 struct lock lock_filesys;
 
 void
-syscall_init (void) 
+syscall_init (void)
 {
+  /* Initialize the lock for the file system. */
   lock_init(&lock_filesys);
-	
+
   intr_register_int (0x30, 3, INTR_ON, syscall_handler, "syscall");
 }
-
 
 /* Handles a system call initiated by a user program. */
 static void
@@ -225,124 +224,6 @@ syscall_handler (struct intr_frame *f UNUSED)
 				break;
 		}
 }
-
-
-/* Ensures that each memory address in a given buffer is in valid user space. */
-void check_buffer (void *buff_to_check, unsigned size)
-{
-  unsigned i;
-  char *ptr  = (char * )buff_to_check;
-  for (i = 0; i < size; i++)
-    {
-      check_valid_addr((const void *) ptr);
-      ptr++;
-    }
-}
-
-/* Code inspired by GitHub Repo created by ryantimwilson (full link in Design2.txt).
-   Get up to three arguments from a programs stack (they directly follow the system
-   call argument). */
-void get_stack_arguments (struct intr_frame *f, int *args, int num_of_args)
-{
-  int i;
-  int *ptr;
-  for (i = 0; i < num_of_args; i++)
-    {
-      ptr = (int *) f->esp + i + 1;
-      check_valid_addr((const void *) ptr);
-      args[i] = *ptr;
-    }
-}
-
-/*Implement  the  system  call  handler  in userprog/syscall.c.  
-The  skeleton  implementation  we  provide  "handles" system  calls  by  terminating  the  process.  
-It  will  need  to  retrieve  the  system  call  number,  
-then  any  system  call arguments, and carry out appropriate actions.*/
-/* static void
-syscall_handler (struct intr_frame *f UNUSED) 
-{
-	
-  check_valid_addr((const void *) f->esp);
-
-  int * p = f->esp; 
-
-  int system_call = * p;  
-	
-  if (f->esp == NULL)
-  {
-    exit(-1);
-  }
-  
-  printf("\nCCCCCCC\n");
-  printf("BLARGH: %d, %d", *((int*)f->esp+1), SYS_WRITE);
-  //int * args = f->esp;
-  
-  switch(*((int*)f->esp+1)) 
-  {
-    case SYS_HALT:
-	  halt();
-      break;
-    case SYS_EXIT: ;
-	  printf("\nTEST");
-	  int status = *((int*)f->esp+1);
-	  printf("\nstatus: %d", status);
-	  exit(status);
-      break;
-    case SYS_EXEC: ;
-	  char * cmd_line = (char*)(*((int*)f->esp+1));
-	  f->eax = exec(cmd_line);
-      break;
-    case SYS_WAIT: ;
-	  pid_t pid = *((pid_t*)f->esp+1);
-	  f->eax = wait(pid);
-      break;
-    case SYS_CREATE: ;
-	  char * file_create = (char*)(*((int*)f->esp+1));
-	  unsigned initial_size = *((unsigned*)f->esp+2);
-	  f->eax = create(file_create, initial_size);
-      break;
-    case SYS_REMOVE: ;
-	  char * file_remove = (char*)(*((int*)f->esp+1));
-	  f->eax = remove(file_remove);
-      break;
-    case SYS_OPEN: ;
-	  //char * file_open = (char*)(*((int*)f->esp+1));
-	  f->eax = open(file_open);
-      break;
-    case SYS_FILESIZE: ;
-	  int fd_fs = *((int*)f->esp+1);
-	  f->eax = filesize(fd_fs);
-      break;
-    case SYS_READ: ;
-	  int fd_r = *((int*)f->esp+1);
-	  void * buffer_r = (void*)(*((int*)f->esp+2));
-      unsigned size_r = *((unsigned*)f->esp+3);
-      f->eax = read(fd_r, buffer_r, size_r);
-	  break;
-    case SYS_WRITE: ;
-	  int fd_w = *((int*)f->esp+1);
-	  void * buffer_w = (void*)(*((int*)f->esp+2));
-      unsigned size_w = *((unsigned*)f->esp+3);
-	  f->eax = write(fd_w, buffer_w, size_w);
-      break;
-    case SYS_SEEK: ;
-	  int fd_s = *((int*)f->esp+1);
-	  unsigned position = *((unsigned*)f->esp+2);
-	  seek(fd_s, position);
-      break;
-    case SYS_TELL: ;
-	  int fd_t = *((int*)f->esp+1);
-	  tell(fd_t);
-      break;
-    case SYS_CLOSE: ;
-	  int fd_c = *((int*)f->esp+1);
-	  close(fd_c);
-      break;
-    default:
-		printf("FAILED ALL");
-  }
-  thread_exit ();
-} */
 
 /* Terminates Pintos, shutting it down entirely (bummer). */
 void halt (void)
