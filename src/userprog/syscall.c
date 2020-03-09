@@ -283,22 +283,19 @@ bool remove (const char *file)
 	return file_remove;
 }
 
-/* Opens a file with the given name, and returns the file descriptor assigned by the
-   thread that opened it. Inspiration derived from GitHub user ryantimwilson (see
-   Design2.txt for attribution link). */
-int open (const char *file)
+/*Opens  the  file  called file.  Returns  a  nonnegative  integer  handle 
+called  a  "file  descriptor"  (fd),  or -1  if  the file could not be opened. */
+int open(const char *file) 
 {
-  /* Make sure that only one process can get ahold of the file system at one time. */
-  lock_acquire(&lock_filesys);
-
-  struct file* f = filesys_open(file);
-
-  /* If no file was created, then return -1. */
-  if(f == NULL)
-  {
-    lock_release(&lock_filesys);
-    return -1;
-  }
+	lock_acquire(&lock_filesys);
+	/* Semaphore/lock should go here */
+	struct file* openedFile = filesys_open(file);
+	if (openedFile == NULL)
+	{
+		lock_release(&lock_filesys);
+		// Release lock
+		return -1;
+	}
 
   /* Create a struct to hold the file/fd, for use in a list in the current process.
      Increment the fd for future files. Release our lock and return the fd as an int. */
