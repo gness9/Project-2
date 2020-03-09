@@ -4,41 +4,51 @@
 #include "threads/interrupt.h"
 #include "threads/thread.h"
 #include "threads/vaddr.h"
-#include "threads/init.h"
-#include "threads/malloc.h"
 #include "userprog/pagedir.h"
-#include "userprog/process.h"
-#include "devices/shutdown.h"
-#include "devices/input.h"
+#include "threads/init.h"
+#include "devices/shutdown.h" /* Imports shutdown_power_off() for use in halt(). */
 #include "filesys/file.h"
 #include "filesys/filesys.h"
+#include "userprog/process.h"
+#include "devices/input.h"
+#include "threads/malloc.h"
 
 static void syscall_handler (struct intr_frame *);
+<<<<<<< HEAD
 struct entry_file * obtain_file(int fd);
 void * obtain_arguments(const void *vaddr);
+=======
+
+/* Get up to three arguments from a programs stack (they directly follow the system
+call argument). */
+>>>>>>> 500ce1ccba3cf64166c314a9ee55cafe3c778d01
 void get_stack_arguments (struct intr_frame *f, int * args, int num_of_args);
 
-/* lock makes sure that file system accesss only has one process at a time 
-STILL NEEDS TO BE IMPLEMENTED*/
-/*struct lock locking_file;*/
-
-struct entry_file {
-	struct file* addr_file;
-	int des_file;
-	struct list_elem element_file;
+/* Creates a struct to insert files and their respective file descriptor into
+   the file_descriptors list for the current thread. */
+struct thread_file
+{
+    struct list_elem file_elem;
+    struct file *file_addr;
+    int file_descriptor;
 };
 
 /* Lock is in charge of ensuring that only one process can access the file system at one time. */
 struct lock lock_filesys;
 
 void
-syscall_init (void) 
+syscall_init (void)
 {
+  /* Initialize the lock for the file system. */
   lock_init(&lock_filesys);
-	
+
   intr_register_int (0x30, 3, INTR_ON, syscall_handler, "syscall");
 }
 
+<<<<<<< HEAD
+=======
+/* Handles a system call initiated by a user program. */
+>>>>>>> 500ce1ccba3cf64166c314a9ee55cafe3c778d01
 static void
 syscall_handler (struct intr_frame *f UNUSED)
 {
@@ -186,6 +196,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 	}
 }
 
+<<<<<<< HEAD
 /*
 void check_buffer (void *buff_to_check, unsigned size)
 {
@@ -312,6 +323,9 @@ void validate_address (const void *stack_pointer)
 	}
 }
 
+=======
+/*Terminates Pintos by calling shutdown_power_off()*/
+>>>>>>> 500ce1ccba3cf64166c314a9ee55cafe3c778d01
 void halt (void)
 {
 	shutdown_power_off();
@@ -330,11 +344,17 @@ pid_t exec (const char * file)
 	{
 		return -1;
 	}
+	lock_acquire(&lock_filesys);
 	pid_t child_tid = process_execute(file);
 	lock_release(&lock_filesys);
 	return child_tid;
 }
 
+<<<<<<< HEAD
+=======
+/*Waits for a child process pidand retrieves the child's exit status. 
+If pidis still alive, waits until it terminates. Then, returns the  status that pidpassed to exit.*/
+>>>>>>> 500ce1ccba3cf64166c314a9ee55cafe3c778d01
 int wait(pid_t pid)
 {
 	return process_wait(pid);
@@ -367,181 +387,289 @@ int open(const char *file)
 		// Release lock
 		return -1;
 	}
-	struct entry_file* processFile = malloc(sizeof(*processFile));
-	processFile->addr_file = file;
-	processFile->des_file = thread_current()->fd_count;
-	thread_current()->fd_count++;
-	list_push_front(&thread_current()->filedes_list, &processFile->element_file);
-	lock_release(&lock_filesys);
-	/* Release all locks here */
-	return processFile->des_file;
+
+  /* Create a struct to hold the file/fd, for use in a list in the current process.
+     Increment the fd for future files. Release our lock and return the fd as an int. */
+  struct thread_file *new_file = malloc(sizeof(struct thread_file));
+  new_file->file_addr = f;
+  int fd = thread_current ()->cur_fd;
+  thread_current ()->cur_fd++;
+  new_file->file_descriptor = fd;
+  list_push_front(&thread_current ()->file_descriptors, &new_file->file_elem);
+  lock_release(&lock_filesys);
+  return fd;
 }
 
+<<<<<<< HEAD
 int filesize (int fd) 
+=======
+/* Returns the size, in bytes, of the file open as fd. */
+int filesize (int fd)
+>>>>>>> 500ce1ccba3cf64166c314a9ee55cafe3c778d01
 {
-	lock_acquire(&lock_filesys);
-	struct entry_file *ef = obtain_file(fd);
-	if(ef->addr_file != NULL)
-	{
-		int file_size = file_length(ef->addr_file);
-		lock_release(&lock_filesys);
-		return file_size;
-	}
-	lock_release(&lock_filesys);
-	return -1;
+  /* list element to iterate the list of file descriptors. */
+  struct list_elem *temp;
+
+  lock_acquire(&lock_filesys);
+
+  /* If there are no files associated with this thread, return -1 */
+  if (list_empty(&thread_current()->file_descriptors))
+  {
+    lock_release(&lock_filesys);
+    return -1;
+  }
+
+  /* Check to see if the given fd is open and owned by the current process. If so, return
+     the length of the file. */
+  for (temp = list_front(&thread_current()->file_descriptors); temp != NULL; temp = temp->next)
+  {
+      struct thread_file *t = list_entry (temp, struct thread_file, file_elem);
+      if (t->file_descriptor == fd)
+      {
+        lock_release(&lock_filesys);
+        return (int) file_length(t->file_addr);
+      }
+  }
+
+  lock_release(&lock_filesys);
+
+  /* Return -1 if we can't find the file. */
+  return -1;
 }
 
+<<<<<<< HEAD
 int read(int fd, void *buffer, unsigned size) 
+=======
+/* Reads size bytes from the file open as fd into buffer. Returns the number of bytes actually read
+   (0 at end of file), or -1 if the file could not be read (due to a condition other than end of file).
+   Fd 0 reads from the keyboard using input_getc(). */
+int read (int fd, void *buffer, unsigned length)
+>>>>>>> 500ce1ccba3cf64166c314a9ee55cafe3c778d01
 {
-	struct list_elem *e;
+  /* list element to iterate the list of file descriptors. */
+  struct list_elem *temp;
 
-	lock_acquire(&lock_filesys);
+  lock_acquire(&lock_filesys);
 
-	if (fd == 0)
-	{
-		lock_release(&lock_filesys);
-		return (int) input_getc();
-	}
+  /* If fd is one, then we must get keyboard input. */
+  if (fd == 0)
+  {
+    lock_release(&lock_filesys);
+    return (int) input_getc();
+  }
 
-	for (e = list_begin (&thread_current()->filedes_list); e != list_end (&thread_current()->filedes_list);
-		e = list_next (e))
-	{
-		struct entry_file *f = list_entry (e, struct entry_file, element_file);
-		if (f->des_file == fd)
-		{
-			int bytes_read = (int) file_read(f->addr_file, buffer, size);
-			lock_release(&lock_filesys);
-			return bytes_read;
-		}
-	}
-	lock_release(&lock_filesys);
-	return -1;
+  /* We can't read from standard out, or from a file if we have none open. */
+  if (fd == 1 || list_empty(&thread_current()->file_descriptors))
+  {
+    lock_release(&lock_filesys);
+    return 0;
+  }
+
+  /* Look to see if the fd is in our list of file descriptors. If found,
+     then we read from the file and return the number of bytes written. */
+  for (temp = list_front(&thread_current()->file_descriptors); temp != NULL; temp = temp->next)
+  {
+      struct thread_file *t = list_entry (temp, struct thread_file, file_elem);
+      if (t->file_descriptor == fd)
+      {
+        lock_release(&lock_filesys);
+        int bytes = (int) file_read(t->file_addr, buffer, length);
+        return bytes;
+      }
+  }
+
+  lock_release(&lock_filesys);
+
+  /* If we can't read from the file, return -1. */
+  return -1;
 }
 
-/*Writes sizebytes from bufferto the open file fd. Returns the number of bytes actually written, 
-which may be less than sizeif some bytes could not be written. */
-int write(int fd, const void *buffer, unsigned size) 
+/* Writes LENGTH bytes from BUFFER to the open file FD. Returns the number of bytes actually written,
+ which may be less than LENGTH if some bytes could not be written. */
+int write (int fd, const void *buffer, unsigned length)
 {
-	struct list_elem *e;
-	
-	lock_acquire(&lock_filesys);
+  /* list element to iterate the list of file descriptors. */
+  struct list_elem *temp;
 
-	if (fd == 1)
-	{
-		putbuf(buffer, size);
-		lock_release(&lock_filesys);
-		return size;
-	}
+  lock_acquire(&lock_filesys);
 
-	for (e = list_begin (&thread_current()->filedes_list); e != list_end (&thread_current()->filedes_list);
-	e = list_next (e))
+  /* If fd is equal to one, then we write to STDOUT (the console, usually). */
+	if(fd == 1)
 	{
-		struct entry_file *f = list_entry (e, struct entry_file, element_file);
-		if (f->des_file == fd)
-		{
-			int bytes_written = (int) file_write(f->addr_file, buffer, size);
-			lock_release(&lock_filesys);
-			return bytes_written;
-		}
+		putbuf(buffer, length);
+    lock_release(&lock_filesys);
+    return length;
 	}
-	return 0;
+  /* If the user passes STDIN or no files are present, then return 0. */
+  if (fd == 0 || list_empty(&thread_current()->file_descriptors))
+  {
+    lock_release(&lock_filesys);
+    return 0;
+  }
+
+  /* Check to see if the given fd is open and owned by the current process. If so, return
+     the number of bytes that were written to the file. */
+  for (temp = list_front(&thread_current()->file_descriptors); temp != NULL; temp = temp->next)
+  {
+      struct thread_file *t = list_entry (temp, struct thread_file, file_elem);
+      if (t->file_descriptor == fd)
+      {
+        int bytes_written = (int) file_write(t->file_addr, buffer, length);
+        lock_release(&lock_filesys);
+        return bytes_written;
+      }
+  }
+
+  lock_release(&lock_filesys);
+
+  /* If we can't write to the file, return 0. */
+  return 0;
 }
 
-/*Changes  the  next  byte  to  be read  or  written  in  open  file fdto position,  
-expressed  in  bytes  from  the beginning of the file. (Thus, a positionof 0 is the file's start.) */
+
+/* Changes the next byte to be read or written in open file fd to position,
+   expressed in bytes from the beginning of the file. (Thus, a position
+   of 0 is the file's start.) */
 void seek (int fd, unsigned position)
-{	
-	
-	lock_acquire(&lock_filesys);
-	
-	if(list_empty(&thread_current()->filedes_list)) {
-		lock_release(&lock_filesys);
-		return;
-	}
-	
-	struct entry_file *ef = obtain_file(fd);
-	
-	if(ef->addr_file != NULL)
-	{
-		file_seek(ef->addr_file, position);
-	}
-	
-	lock_release(&lock_filesys);
-	return;
-	
-}
-
-/*Returns  the  position  of  the  next  byte  to  be  read  or  written  in  open  file fd,  
-expressed  in  bytes  from  the beginning of the file. */
-unsigned
-tell (int fd)
 {
-	
-	lock_acquire(&lock_filesys);
-	
-	if(list_empty(&thread_current()->filedes_list)) {
-		lock_release(&lock_filesys);
-		return -1;
-	}
-	
-	struct entry_file *ef = obtain_file(fd);
-	
-	if(ef->addr_file != NULL)
-	{
-		unsigned file_pos = (unsigned) file_tell(ef->addr_file);
-		lock_release(&lock_filesys);
-		return file_pos;
-	}
-	
-	lock_release(&lock_filesys);
-	return -1;
-	
+  /* list element to iterate the list of file descriptors. */
+  struct list_elem *temp;
+
+  lock_acquire(&lock_filesys);
+
+  /* If there are no files to seek through, then we immediately return. */
+  if (list_empty(&thread_current()->file_descriptors))
+  {
+    lock_release(&lock_filesys);
+    return;
+  }
+
+  /* Look to see if the given fd is in our list of file_descriptors. IF so, then we
+     seek through the appropriate file. */
+  for (temp = list_front(&thread_current()->file_descriptors); temp != NULL; temp = temp->next)
+  {
+      struct thread_file *t = list_entry (temp, struct thread_file, file_elem);
+      if (t->file_descriptor == fd)
+      {
+        file_seek(t->file_addr, position);
+        lock_release(&lock_filesys);
+        return;
+      }
+  }
+
+  lock_release(&lock_filesys);
+
+  /* If we can't seek, return. */
+  return;
 }
 
-/*Closes file descriptor fd. Exiting or terminating a process implicitly closes all its open file descriptors, as if
-by calling this function for each one. */
-void
-close (int fd)
-{ 
+/* Returns the position of the next byte to be read or written in open file fd,
+   expressed in bytes from the beginning of the file. */
+unsigned tell (int fd)
+{
+  /* list element to iterate the list of file descriptors. */
+  struct list_elem *temp;
 
-	lock_acquire(&lock_filesys);
-	/*lock_acquire(&locking_file);*/
-	
-	if(list_empty(&thread_current()->filedes_list)) {
-		/*lock_release(&locking_file);*/
-		lock_release(&lock_filesys);
-		return;
-	}
-	
-	struct entry_file *ef = obtain_file(fd);
-	
-	if(ef != NULL)
-	{
-		file_close(ef->addr_file);
-		list_remove(&ef->element_file);
-		lock_release(&lock_filesys);
-		return;
-	}
-	
-	lock_release(&lock_filesys);
-	return;
+  lock_acquire(&lock_filesys);
 
+  /* If there are no files in our file_descriptors list, return immediately, */
+  if (list_empty(&thread_current()->file_descriptors))
+  {
+    lock_release(&lock_filesys);
+    return -1;
+  }
+
+  /* Look to see if the given fd is in our list of file_descriptors. If so, then we
+     call file_tell() and return the position. */
+  for (temp = list_front(&thread_current()->file_descriptors); temp != NULL; temp = temp->next)
+  {
+      struct thread_file *t = list_entry (temp, struct thread_file, file_elem);
+      if (t->file_descriptor == fd)
+      {
+        unsigned position = (unsigned) file_tell(t->file_addr);
+        lock_release(&lock_filesys);
+        return position;
+      }
+  }
+
+  lock_release(&lock_filesys);
+
+  return -1;
 }
 
-/*Based on the file descriptor, gets a file from the list of files*/
-struct entry_file * obtain_file(int fd) {
-	
-	struct list_elem * el;
-	
-	el = list_front(&thread_current()->filedes_list);
-	
-	while (el != NULL) {
-		struct entry_file *f = list_entry (el, struct entry_file, element_file);
-		if(fd == f->des_file)
-		{
-			return f;
-		}
-		el = el->next;
+/* Closes file descriptor fd. Exiting or terminating a process implicitly closes
+   all its open file descriptors, as if by calling this function for each one. */
+void close (int fd)
+{
+  /* list element to iterate the list of file descriptors. */
+  struct list_elem *temp;
+
+  lock_acquire(&lock_filesys);
+
+  /* If there are no files in our file_descriptors list, return immediately, */
+  if (list_empty(&thread_current()->file_descriptors))
+  {
+    lock_release(&lock_filesys);
+    return;
+  }
+
+  /* Look to see if the given fd is in our list of file_descriptors. If so, then we
+     close the file and remove it from our list of file_descriptors. */
+  for (temp = list_front(&thread_current()->file_descriptors); temp != NULL; temp = temp->next)
+  {
+      struct thread_file *t = list_entry (temp, struct thread_file, file_elem);
+      if (t->file_descriptor == fd)
+      {
+        file_close(t->file_addr);
+        list_remove(&t->file_elem);
+        lock_release(&lock_filesys);
+        return;
+      }
+  }
+
+  lock_release(&lock_filesys);
+
+  return;
+}
+
+/* Check to make sure that the given pointer is in user space,
+   and is not null. We must exit the program and free its resources should
+   any of these conditions be violated. */
+void check_valid_addr (const void *ptr_to_check)
+{
+  /* Terminate the program with an exit status of -1 if we are passed
+     an argument that is not in the user address space or is null. Also make
+     sure that pointer doesn't go beyond the bounds of virtual address space.  */
+  if(!is_user_vaddr(ptr_to_check) || ptr_to_check == NULL || ptr_to_check < (void *) 0x08048000)
+	{
+    /* Terminate the program and free its resources */
+    exit(-1);
 	}
-	return NULL;
+}
+
+/* Ensures that each memory address in a given buffer is in valid user space. */
+void check_buffer (void *buff_to_check, unsigned size)
+{
+  unsigned i;
+  char *ptr  = (char * )buff_to_check;
+  for (i = 0; i < size; i++)
+    {
+      check_valid_addr((const void *) ptr);
+      ptr++;
+    }
+}
+
+/* Code inspired by GitHub Repo created by ryantimwilson (full link in Design2.txt).
+   Get up to three arguments from a programs stack (they directly follow the system
+   call argument). */
+void get_stack_arguments (struct intr_frame *f, int *args, int num_of_args)
+{
+  int i;
+  int *ptr;
+  for (i = 0; i < num_of_args; i++)
+    {
+      ptr = (int *) f->esp + i + 1;
+      check_valid_addr((const void *) ptr);
+      args[i] = *ptr;
+    }
 }
