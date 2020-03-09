@@ -174,6 +174,7 @@ If P calls wait(C) before C exits, P will wait for C until C has signaled it is 
 If P calls wait(C) after C exits, P will not wait since C has already been removed from P's list of children.
 If P terminates without waiting either before or after C exits, C will become an orphan and will never be able to signal to its parent when it is finished executing.
 
+
 ---- RATIONALE ----
 
 >> B9: Why did you choose to implement access to user memory from the
