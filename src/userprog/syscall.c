@@ -56,13 +56,13 @@ syscall_handler (struct intr_frame *f UNUSED)
 		case SYS_HALT:
 			halt();
 			break;
-		case SYS_EXIT:
+		case SYS_EXIT: ;
 			stack_pointer = (int *)stack_pointer + 1;
 			validate_address((const void *) stack_pointer);
 			int arg = *(int *)stack_pointer;
 			exit(arg);
 			break;
-		case SYS_EXEC:
+		case SYS_EXEC: ;
 			stack_pointer = (int *)stack_pointer + 1;
 			validate_address((const void *) stack_pointer);
 			arg = *(int *)stack_pointer;
@@ -73,13 +73,13 @@ syscall_handler (struct intr_frame *f UNUSED)
 			arg = (int) virt_page;
 			f->eax = exec((const char *) arg);
 			break;
-		case SYS_WAIT:
+		case SYS_WAIT: ;
 			stack_pointer = (int *)stack_pointer + 1;
 			validate_address((const void *) stack_pointer);
 			arg = *(int *)stack_pointer;
 			f->eax = wait((pid_t) arg);
 			break;
-		case SYS_CREATE:
+		case SYS_CREATE: ;
 			int args[2];
 			for (int i = 0; i < 2; i++) {
 				stack_pointer = (int *) f->esp + i + 1;
@@ -98,7 +98,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 			args[0] = (int) virt_page;
 			f->eax = create((const char *) args[0], (unsigned) args[1]);
 			break;
-		case SYS_REMOVE:
+		case SYS_REMOVE: ;
 			stack_pointer = (int *)stack_pointer + 1;
 			validate_address((const void *) stack_pointer);
 			arg = *(int *)stack_pointer;
@@ -109,7 +109,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 			arg = (int) virt_page;
 			f->eax = remove((const char *) arg);
 			break;
-		case SYS_OPEN:
+		case SYS_OPEN: ;
 			stack_pointer = (int *)stack_pointer + 1;
 			validate_address((const void *) stack_pointer);
 			arg = *(int *)stack_pointer;
@@ -120,13 +120,13 @@ syscall_handler (struct intr_frame *f UNUSED)
 			arg = (int) virt_page;
 			f->eax = open((const char *) arg);
 			break;
-		case SYS_FILESIZE:
+		case SYS_FILESIZE: ;
 			stack_pointer = (int *)stack_pointer + 1;
 			validate_address((const void *) stack_pointer);
 			arg = *(int *)stack_pointer;
 			f->eax = filesize(arg);
 			break;
-		case SYS_READ:
+		case SYS_READ: ;
 			int args[3];
 			for (int i = 0; i < 3; i++) {
 				stack_pointer = (int *) f->esp + i + 1;
@@ -145,7 +145,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 			args[1] = (int) virt_page;
 			f->eax = read(args[0], (void *) args[1], (unsigned) args[2]);
 			break;
-		case SYS_WRITE:
+		case SYS_WRITE: ;
 			int args[3];
 			for (int i = 0; i < 3; i++) {
 				stack_pointer = (int *) f->esp + i + 1;
@@ -164,7 +164,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 			args[1] = (int) virt_page;
 			f->eax = write(args[0], (const void *) args[1], (unsigned) args[2]);
 			break;
-		case SYS_SEEK:
+		case SYS_SEEK: ;
 			int args[2];
 			for (int i = 0; i < 2; i++) {
 				stack_pointer = (int *) f->esp + i + 1;
@@ -173,13 +173,13 @@ syscall_handler (struct intr_frame *f UNUSED)
 			}
 			seek(args[0], (unsigned) args[1]);
 			break;
-		case SYS_TELL:
+		case SYS_TELL: ;
 			stack_pointer = (int *)stack_pointer + 1;
 			validate_address((const void *) stack_pointer);
 			arg = *(int *)stack_pointer;
 			f->eax = tell(arg);
 			break;
-		case SYS_CLOSE:
+		case SYS_CLOSE: ;
 			stack_pointer = (int *)stack_pointer + 1;
 			validate_address((const void *) stack_pointer);
 			arg = *(int *)stack_pointer;
