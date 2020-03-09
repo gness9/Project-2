@@ -42,13 +42,12 @@ then  any  system  call arguments, and carry out appropriate actions.*/
 static void
 syscall_handler (struct intr_frame *f UNUSED) 
 {
-	printf("CCCCCCCB");
   if (f->esp == NULL)
   {
     exit(-1);
   }
   
-  printf("CCCCCCC");
+  printf("\nCCCCCCC");
   //int * args = f->esp;
   
   switch(*(int*)f->esp) 
@@ -58,6 +57,7 @@ syscall_handler (struct intr_frame *f UNUSED)
       break;
     case SYS_EXIT: ;
 	  int status = *((int*)f->esp+1);
+	  printf("\nstatus: %d", status);
 	  exit(status);
       break;
     case SYS_EXEC: ;
