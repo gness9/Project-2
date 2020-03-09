@@ -66,7 +66,7 @@ syscall_handler (struct intr_frame *f UNUSED)
     case SYS_EXIT: ;
 	  printf("\nTEST");
 	  int status = *((int*)f->esp+1);
-	  int cheeseStatus = status + 56
+	  int cheeseStatus = status + 56;
 	  printf("\nstatus: %d", chheseStatus);
 	  exit(status);
       break;
