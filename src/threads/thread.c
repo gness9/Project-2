@@ -282,8 +282,7 @@ void
 thread_exit (void)
 {
   ASSERT (!intr_context ());
-  /* Tell my parent thread to stop waiting. */
-  sema_up(&thread_current ()->being_waited_on);
+  sema_up(&(thread_current()->hold));
 
 #ifdef USERPROG
   process_exit ();
@@ -472,6 +471,9 @@ init_thread (struct thread *t, const char *name, int priority)
      for STDIN and STDOUT, respectively). */
   t->cur_fd = 2;
 
+  list_init(&t->child_list);
+  sema_init(&t->hold, 0);
+   
   /* Init the semaphore in charge of putting a parent thread to sleep. */
   sema_init(&t->being_waited_on, 0);
 
