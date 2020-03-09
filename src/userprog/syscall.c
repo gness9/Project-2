@@ -297,7 +297,7 @@ int open(const char *file)
 
   /* Create a struct to hold the file/fd, for use in a list in the current process.
      Increment the fd for future files. Release our lock and return the fd as an int. */
-  struct thread_file *new_file = malloc(sizeof(struct thread_file));
+  struct entry_file *new_file = malloc(sizeof(struct entry_file));
   new_file->addr_file = openedFile;
   int fd = thread_current ()->cur_fd;
   thread_current ()->cur_fd++;
@@ -326,7 +326,7 @@ int filesize (int fd)
      the length of the file. */
   for (temp = list_front(&thread_current()->file_descriptors); temp != NULL; temp = temp->next)
   {
-      struct thread_file *t = list_entry (temp, struct thread_file, element_file);
+      struct entry_file *t = list_entry (temp, struct entry_file, element_file);
       if (t->des_file == fd)
       {
         lock_release(&lock_filesys);
@@ -368,7 +368,7 @@ int read (int fd, void *buffer, unsigned length)
      then we read from the file and return the number of bytes written. */
   for (temp = list_front(&thread_current()->file_descriptors); temp != NULL; temp = temp->next)
   {
-      struct thread_file *t = list_entry (temp, struct thread_file, element_file);
+      struct entry_file *t = list_entry (temp, struct entry_file, element_file);
       if (t->des_file == fd)
       {
         lock_release(&lock_filesys);
@@ -410,7 +410,7 @@ int write (int fd, const void *buffer, unsigned length)
      the number of bytes that were written to the file. */
   for (temp = list_front(&thread_current()->file_descriptors); temp != NULL; temp = temp->next)
   {
-      struct thread_file *t = list_entry (temp, struct thread_file, element_file);
+      struct entry_file *t = list_entry (temp, struct entry_file, element_file);
       if (t->des_file == fd)
       {
         int bytes_written = (int) file_write(t->addr_file, buffer, length);
@@ -447,7 +447,7 @@ void seek (int fd, unsigned position)
      seek through the appropriate file. */
   for (temp = list_front(&thread_current()->file_descriptors); temp != NULL; temp = temp->next)
   {
-      struct thread_file *t = list_entry (temp, struct thread_file, element_file);
+      struct entry_file *t = list_entry (temp, struct entry_file, element_file);
       if (t->des_file == fd)
       {
         file_seek(t->addr_file, position);
@@ -482,7 +482,7 @@ unsigned tell (int fd)
      call file_tell() and return the position. */
   for (temp = list_front(&thread_current()->file_descriptors); temp != NULL; temp = temp->next)
   {
-      struct thread_file *t = list_entry (temp, struct thread_file, element_file);
+      struct entry_file *t = list_entry (temp, struct entry_file, element_file);
       if (t->des_file == fd)
       {
         unsigned position = (unsigned) file_tell(t->addr_file);
@@ -516,7 +516,7 @@ void close (int fd)
      close the file and remove it from our list of file_descriptors. */
   for (temp = list_front(&thread_current()->file_descriptors); temp != NULL; temp = temp->next)
   {
-      struct thread_file *t = list_entry (temp, struct thread_file, element_file);
+      struct entry_file *t = list_entry (temp, struct entry_file, element_file);
       if (t->des_file == fd)
       {
         file_close(t->addr_file);
