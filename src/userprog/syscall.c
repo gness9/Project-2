@@ -23,9 +23,9 @@ void get_stack_arguments (struct intr_frame *f, int * args, int num_of_args);
    the file_descriptors list for the current thread. */
 struct thread_file
 {
-    struct list_elem file_elem;
-    struct file *file_addr;
-    int file_descriptor;
+    struct file* addr_file;
+	int des_file;
+	struct list_elem element_file;
 };
 
 /* Lock is in charge of ensuring that only one process can access the file system at one time. */
