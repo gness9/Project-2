@@ -118,7 +118,9 @@ syscall_handler (struct intr_frame *f UNUSED)
     case SYS_CLOSE: ;
 	  int fd_c = *((int*)f->esp+1);
 	  close(fd_c);
-      break;	
+      break;
+    default:
+		printf("FAILED ALL");
   }
   thread_exit ();
 }
